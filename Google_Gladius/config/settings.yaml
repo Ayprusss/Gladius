@@ -1,0 +1,123 @@
+# Multi-Agent Claude CLI Pipeline Configuration
+
+# Claude CLI Settings
+claude:
+  # Path to Claude CLI executable
+  # Default: "claude" (assumes it's in PATH)
+  cli_path: "claude"
+
+  # Timeout for Claude CLI invocations (seconds)
+  # Default: 300 (5 minutes)
+  timeout: 300
+
+  # Default model to use
+  # Options: sonnet, opus, haiku
+  model: "sonnet"
+
+# Pipeline Settings
+pipeline:
+  # Maximum number of review/revision cycles
+  # After this many iterations, pipeline stops even if not approved
+  max_review_iterations: 2
+
+  # Base directory for storing run artifacts
+  runs_directory: "runs"
+
+  # Number of old runs to keep (for cleanup)
+  keep_last_runs: 10
+
+  # Default project path if not specified via CLI
+  # "." means current working directory
+  default_project_path: "."
+
+  # Auto-detect current working directory as project path
+  auto_detect_cwd: true
+
+  # Validate project path accessibility before running
+  validate_project_path: true
+
+# Agent Settings
+agents:
+  # Retry settings for all agents
+  max_retries: 3
+  base_delay: 2.0  # Exponential backoff base (seconds)
+
+  # Planner-specific settings
+  planner:
+    # Additional context or instructions can be added here
+    enabled: true
+
+  # Implementer-specific settings
+  implementer:
+    # Additional context or instructions can be added here
+    enabled: true
+
+  # Reviewer-specific settings
+  reviewer:
+    # Minimum severity to block approval
+    # Options: critical, major, minor
+    blocking_severity: "major"
+    enabled: true
+
+# Direct Request Settings
+direct_requests:
+  # Enable direct natural language requests
+  enabled: true
+
+  # Default type for ambiguous requests
+  default_type: "feature"
+
+  # Default priority for direct requests
+  default_priority: "medium"
+
+  # Prefix for synthetic ticket IDs
+  synthetic_ticket_prefix: "DIRECT"
+
+# MCP Settings
+mcp:
+  # MCP implementation type
+  # Options: mock, jira, unified
+  type: "unified"
+
+  # Mock MCP settings (for testing)
+  mock:
+    # Mock tickets are defined in src/mcp/mock_mcp.py
+    enabled: true
+
+  # Jira MCP settings (when using real Jira)
+  jira:
+    # Jira server URL
+    server_url: ""
+
+    # Authentication method
+    # Options: token, basic
+    auth_method: "token"
+
+    # Credentials (use environment variables in production)
+    # JIRA_TOKEN or JIRA_USERNAME/JIRA_PASSWORD
+    email: ""
+    token: ""
+
+# Logging Settings
+logging:
+  # Log level
+  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+
+  # Log format
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+  # Save logs to file
+  save_to_file: true
+  log_directory: "logs"
+
+# Output Settings
+output:
+  # Pretty print JSON outputs
+  pretty_json: true
+
+  # Include timestamps in filenames
+  timestamp_format: "%Y%m%d_%H%M%S"
+
+  # Save intermediate outputs
+  save_all_iterations: true

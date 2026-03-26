@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python scripts/run_pipeline.py:*)",
+      "Bash(python:*)",
+      "Bash(dir runs /b /od)"
+    ]
+  }
+}
