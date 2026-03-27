@@ -102,7 +102,16 @@ class PipelineOrchestrator:
         print("-" * 60)
         plan_output = self._run_planner(ticket_data, model, project_path)
         self.artifact_manager.save_planner_output(plan_output.model_dump())
-        print(f"✅ Plan created: {len(plan_output.plan)} steps\n")
+        print(f"✅ Plan created: {len(plan_output.plan)} steps")
+        print(f"\n   Summary: {plan_output.summary}")
+        print("   Steps:")
+        for i, step in enumerate(plan_output.plan, 1):
+            print(f"     {i}. {step}")
+        if plan_output.files_to_change:
+            print("\n   Files to modify:")
+            for file_mod in plan_output.files_to_change:
+                print(f"     - {file_mod.path}: {file_mod.reason}")
+        print()
 
         # Phase 2: Implementation with review cycles
         print("💻 Phase 2: Implementation & Review")
@@ -235,7 +244,7 @@ class PipelineOrchestrator:
         """Run implementer agent"""
         context = {
             "ticket": ticket_data,
-            "plan": plan_output.model_dump(),
+            "plan": plan_output,
             "model": model,
             "iteration": iteration,
             "project_path": str(project_path),
@@ -263,8 +272,8 @@ class PipelineOrchestrator:
         """Run reviewer agent"""
         context = {
             "ticket": ticket_data,
-            "plan": plan_output.model_dump(),
-            "implementation": impl_output.model_dump(),
+            "plan": plan_output,
+            "implementation": impl_output,
             "model": model,
             "project_path": str(project_path),
             "project_path_absolute": str(project_path.absolute())
