@@ -29,7 +29,7 @@ This project demonstrates a realistic AI-assisted engineering pipeline where sta
 
 🎉 **ALL PHASES COMPLETE** - Production ready with ~2,500+ lines of code
 
-See [PHASE_1_2_COMPLETE.md](./PHASE_1_2_COMPLETE.md) and [PHASE_3_4_COMPLETE.md](./PHASE_3_4_COMPLETE.md) for detailed implementation status.
+See [PROJECT_SUMMARY.md](docs/PROJECT_SUMMARY.md) for detailed implementation status.
 
 ## Quick Start
 
@@ -224,9 +224,8 @@ mcp:
 
 ## Documentation
 
-- [Project Plan](scripts/projectPlan_README.md) - Original concept and requirements
-- [Implementation Plan](scripts/IMPLEMENTATION_PLAN.md) - Detailed technical plan
-- [Phase 1 & 2 Status](PHASE_1_2_COMPLETE.md) - Current implementation status
+- [Project Summary](docs/PROJECT_SUMMARY.md) - Detailed project summary and status
+- [Debug Guide](docs/DEBUG_GUIDE.md) - Troubleshooting instructions
 
 ## Contributing
 
