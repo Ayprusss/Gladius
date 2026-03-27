@@ -3,10 +3,13 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, TypeVar, Generic
 import time
 import json
+import logging
 from pathlib import Path
 from pydantic import BaseModel, ValidationError
 
 from ..claude_client.cli_invoker import ClaudeClient
+
+logger = logging.getLogger(__name__)
 
 
 T = TypeVar('T', bound=BaseModel)
@@ -99,14 +102,13 @@ class BaseAgent(ABC, Generic[T]):
                     model=context.get('model', 'sonnet')
                 )
 
-                # Debug: Show what we got before validation (to stderr)
-                import sys
-                print(f"\n[DEBUG - BaseAgent] Raw output type: {type(raw_output)}", file=sys.stderr)
-                print(f"[DEBUG - BaseAgent] Raw output keys: {list(raw_output.keys()) if isinstance(raw_output, dict) else 'not a dict'}", file=sys.stderr)
+                # Debug: Show what we got before validation
+                logger.debug(f"Raw output type: {type(raw_output)}")
+                logger.debug(f"Raw output keys: {list(raw_output.keys()) if isinstance(raw_output, dict) else 'not a dict'}")
                 if isinstance(raw_output, dict):
-                    print(f"[DEBUG - BaseAgent] Has 'summary'? {('summary' in raw_output)}", file=sys.stderr)
-                    print(f"[DEBUG - BaseAgent] Has 'plan'? {('plan' in raw_output)}", file=sys.stderr)
-                    print(f"[DEBUG - BaseAgent] Has 'type'? {('type' in raw_output)}", file=sys.stderr)
+                    logger.debug(f"Has 'summary'? {('summary' in raw_output)}")
+                    logger.debug(f"Has 'plan'? {('plan' in raw_output)}")
+                    logger.debug(f"Has 'type'? {('type' in raw_output)}")
 
                 # Validate with Pydantic
                 validated_output = schema_class.model_validate(raw_output)
@@ -126,9 +128,9 @@ class BaseAgent(ABC, Generic[T]):
                     delay = self.base_delay ** attempt
                     time.sleep(delay)
 
-                    print(f"Attempt {attempt + 1} failed validation. Retrying in {delay}s...")
+                    logger.warning(f"Attempt {attempt + 1} failed validation. Retrying in {delay}s...")
                 else:
-                    print(f"All {self.max_retries} attempts exhausted")
+                    logger.error(f"All {self.max_retries} attempts exhausted")
 
             except (json.JSONDecodeError, TimeoutError, RuntimeError) as e:
                 last_error = e
@@ -136,9 +138,9 @@ class BaseAgent(ABC, Generic[T]):
                 if attempt < self.max_retries - 1:
                     delay = self.base_delay ** attempt
                     time.sleep(delay)
-                    print(f"Attempt {attempt + 1} failed: {str(e)}. Retrying in {delay}s...")
+                    logger.warning(f"Attempt {attempt + 1} failed: {str(e)}. Retrying in {delay}s...")
                 else:
-                    print(f"All {self.max_retries} attempts exhausted")
+                    logger.error(f"All {self.max_retries} attempts exhausted")
 
         # All retries exhausted
         raise RuntimeError(
@@ -159,4 +161,4 @@ class BaseAgent(ABC, Generic[T]):
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(output.model_dump(), f, indent=2)
 
-        print(f"Output saved to: {output_path}")
+        logger.info(f"Output saved to: {output_path}")
