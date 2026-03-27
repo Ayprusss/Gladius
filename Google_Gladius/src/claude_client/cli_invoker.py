@@ -157,55 +157,47 @@ class ClaudeClient:
             parsed = json.loads(output)
             logger.debug(f"Parsed JSON successfully. Top-level keys: {list(parsed.keys()) if isinstance(parsed, dict) else 'not a dict'}")
 
-            # Check if this is a Claude CLI response wrapper
-            if isinstance(parsed, dict):
-                if 'type' in parsed and parsed.get('type') == 'result':
-                    logger.debug("Detected wrapper format with type='result'")
+            # Define target keys that identify our actual agent schemas
+            target_keys = {'plan', 'changes', 'verdict', 'issues', 'patch', 'files_to_modify'}
 
-                    if 'structured_output' in parsed:
-                        structured_output = parsed['structured_output']
-                        logger.debug(f"Found 'structured_output' field, type: {type(structured_output)}")
-                        if isinstance(structured_output, dict):
-                            return structured_output
+            def extract_from_string(s: str) -> Optional[Dict[str, Any]]:
+                try:
+                    obj = json.loads(s)
+                    if isinstance(obj, dict) and any(k in obj for k in target_keys):
+                        return obj
+                except json.JSONDecodeError:
+                    pass
+                md_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', s, re.DOTALL)
+                if md_match:
+                    try:
+                        obj = json.loads(md_match.group(1))
+                        if isinstance(obj, dict) and any(k in obj for k in target_keys):
+                            return obj
+                    except json.JSONDecodeError:
+                        pass
+                return None
 
-                    for content_field in ['content', 'data', 'text', 'output']:
-                        if content_field in parsed:
-                            content = parsed[content_field]
-                            logger.debug(f"Found content field '{content_field}', type: {type(content)}")
+            def search_parsed(obj: Any) -> Optional[Dict[str, Any]]:
+                if isinstance(obj, dict):
+                    if any(k in obj for k in target_keys):
+                        return obj
+                    for v in obj.values():
+                        res = search_parsed(v)
+                        if res: return res
+                elif isinstance(obj, list):
+                    for v in obj:
+                        res = search_parsed(v)
+                        if res: return res
+                elif isinstance(obj, str):
+                    res = extract_from_string(obj)
+                    if res: return res
+                return None
 
-                            if isinstance(content, list):
-                                for i, item in enumerate(content):
-                                    if isinstance(item, dict) and 'text' in item:
-                                        text_content = item['text']
-                                        logger.debug(f"Found text field in item {i}, first 200 chars: {text_content[:200]}")
-                                        try:
-                                            extracted = json.loads(text_content)
-                                            logger.debug("Successfully extracted JSON from text field!")
-                                            return extracted
-                                        except (json.JSONDecodeError, TypeError) as e:
-                                            logger.debug(f"Failed to parse text as JSON: {e}")
-                                            md_pattern = r'```(?:json)?\s*(\{.*?\})\s*```'
-                                            md_match = re.search(md_pattern, text_content, re.DOTALL)
-                                            if md_match:
-                                                try:
-                                                    extracted = json.loads(md_match.group(1))
-                                                    logger.debug("Successfully extracted JSON from markdown!")
-                                                    return extracted
-                                                except json.JSONDecodeError:
-                                                    pass
-
-                            elif isinstance(content, str):
-                                try:
-                                    return json.loads(content)
-                                except json.JSONDecodeError:
-                                    pass
-
-                            elif isinstance(content, dict):
-                                return content
-
-                logger.debug("No wrapper extraction successful, returning parsed as-is")
-                logger.debug(f"Full parsed structure: {json.dumps(parsed, indent=2)[:1000]}")
-                return parsed
+            # Attempt a deep search for the target schema
+            found_schema = search_parsed(parsed)
+            if found_schema:
+                logger.debug("Successfully extracted target schema from parsed wrapper.")
+                return found_schema
 
             return parsed
         except json.JSONDecodeError:
