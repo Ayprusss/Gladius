@@ -80,8 +80,24 @@ class ClaudeClient:
                 '--json-schema', json.dumps(json_schema)
             ])
 
-        # Add user message
-        cmd.append(user_message)
+        # Add user message safely around Windows limitations
+        import sys
+        cmd_length = sum(len(str(x)) for x in cmd) + len(user_message or "")
+        user_msg_temp = None
+        stdin_val = None
+
+        if sys.platform == "win32" and cmd_length > 8000:
+            import tempfile
+            import os
+            fd, user_msg_temp = tempfile.mkstemp(suffix=".txt", text=True)
+            with os.fdopen(fd, 'w', encoding='utf-8') as f:
+                f.write(user_message)
+            
+            # Shorten the command line explicitly, relying on Claude to read stdin
+            cmd.append("Please fulfill the task provided in the standard input.")
+            stdin_val = open(user_msg_temp, 'r', encoding='utf-8')
+        else:
+            cmd.append(user_message)
 
         stop_spinner = threading.Event()
         spinner_thread = threading.Thread(target=self._spinner_thread, args=(stop_spinner,))
@@ -95,7 +111,7 @@ class ClaudeClient:
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=None,  # Allow stderr passthrough for auth prompts
-                stdin=None,   # Allow stdin passthrough for interactive input
+                stdin=stdin_val,   # Usually None, but file pointer if WinError 206 limits exceeded
                 text=True,
                 timeout=self.timeout,
                 check=True
@@ -134,6 +150,19 @@ class ClaudeClient:
             stop_spinner.set()
             spinner_thread.join()
             raise # Re-raise the exception
+        finally:
+            if stdin_val:
+                try:
+                    stdin_val.close()
+                except Exception:
+                    pass
+            if user_msg_temp:
+                import os
+                if os.path.exists(user_msg_temp):
+                    try:
+                        os.remove(user_msg_temp)
+                    except Exception:
+                        pass
 
     def _parse_json_output(self, output: str) -> Dict[str, Any]:
         """
