@@ -234,6 +234,17 @@ class ClaudeClient:
                     continue
 
         if parsed is not None:
+            # Always prefer natively parsed structured_output from the CLI wrapper
+            # to avoid grabbing unvalidated text/markdown conversational drafts.
+            if isinstance(parsed, dict):
+                struct_out = parsed.get("structured_output")
+                if isinstance(struct_out, dict):
+                    return struct_out
+                # Fallback to older wrapper styles
+                if parsed.get("type") == "result" and isinstance(parsed.get("result"), dict):
+                    if "structured_output" in parsed["result"]:
+                        return parsed["result"]["structured_output"]
+
             found_schema = search_parsed(parsed)
             if found_schema:
                 logger.debug("Successfully extracted target schema from parsed wrapper.")
