@@ -3,6 +3,7 @@
 import argparse
 import sys
 import io
+import logging
 from pathlib import Path
 
 # Fix Windows console encoding to support Unicode/emoji
@@ -19,6 +20,7 @@ from src.mcp.unified_mcp_client import UnifiedMCPClient
 from src.request_processor.request_adapter import DirectRequestAdapter
 from src.utils.artifact_manager import ArtifactManager
 from src.utils.path_resolver import ProjectPathResolver
+from src.utils.config import ConfigLoader
 
 
 def main():
@@ -55,6 +57,11 @@ Examples:
         """
     )
 
+    # Load config and parse arguments
+    config = ConfigLoader.load_config()
+    pipeline_config = config.get('pipeline', {})
+    claude_config = config.get('claude', {})
+
     parser.add_argument(
         "request",
         nargs="?",
@@ -64,39 +71,40 @@ Examples:
     parser.add_argument(
         "--model",
         choices=["sonnet", "opus", "haiku"],
-        default="sonnet",
-        help="Claude model to use (default: sonnet)"
+        default=claude_config.get('model', 'sonnet'),
+        help="Claude model to use (default: sonnet or config value)"
     )
 
     parser.add_argument(
         "--claude-path",
-        default="claude",
-        help="Path to Claude CLI executable (default: claude)"
+        default=claude_config.get('cli_path', 'claude'),
+        help="Path to Claude CLI executable (default: claude or config value)"
     )
 
     parser.add_argument(
         "--timeout",
         type=int,
-        default=300,
-        help="Timeout for Claude CLI invocations in seconds (default: 300)"
+        default=claude_config.get('timeout', 300),
+        help="Timeout for Claude CLI invocations in seconds"
     )
 
     parser.add_argument(
         "--max-iterations",
         type=int,
-        default=2,
-        help="Maximum review/revision cycles (default: 2)"
+        default=pipeline_config.get('max_review_iterations', 2),
+        help="Maximum review/revision cycles"
     )
 
     parser.add_argument(
         "--runs-dir",
-        default="runs",
-        help="Directory to store run artifacts (default: runs)"
+        default=pipeline_config.get('runs_directory', 'runs'),
+        help="Directory to store run artifacts"
     )
 
     parser.add_argument(
         "--project-path",
         type=str,
+        default=pipeline_config.get('default_project_path', None),
         help="Path to project codebase (default: auto-detect current directory)"
     )
 
@@ -113,6 +121,12 @@ Examples:
     )
 
     parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug logging"
+    )
+
+    parser.add_argument(
         "--cleanup",
         type=int,
         metavar="N",
@@ -120,6 +134,14 @@ Examples:
     )
 
     args = parser.parse_args()
+
+    # Configure logging
+    log_level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(
+        level=log_level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    logger = logging.getLogger(__name__)
 
     # Initialize artifact manager
     artifact_manager = ArtifactManager(base_dir=args.runs_dir)
