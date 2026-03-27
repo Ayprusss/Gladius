@@ -2,7 +2,12 @@
 import subprocess
 import json
 import re
+import logging
+import threading
+import time
 from typing import Dict, Any, Optional
+
+logger = logging.getLogger(__name__)
 from pathlib import Path
 
 
@@ -19,6 +24,19 @@ class ClaudeClient:
         """
         self.claude_path = claude_path
         self.timeout = timeout
+
+    def _spinner_thread(self, stop_event: threading.Event):
+        """
+        Displays a spinning cursor in the console while waiting.
+        """
+        spinner_chars = ['-', '\\', '|', '/']
+        i = 0
+        while not stop_event.is_set():
+            print(f"\rWaiting for Claude CLI... {spinner_chars[i % len(spinner_chars)]}", end="", flush=True)
+            i += 1
+            time.sleep(0.1)
+        # Clear the spinner line after stopping
+        print("\r" + " " * 40 + "\r", end="", flush=True)
 
     def invoke(
         self,
@@ -65,6 +83,11 @@ class ClaudeClient:
         # Add user message
         cmd.append(user_message)
 
+        stop_spinner = threading.Event()
+        spinner_thread = threading.Thread(target=self._spinner_thread, args=(stop_spinner,))
+        spinner_thread.daemon = True # Allow main program to exit even if spinner is still running
+        spinner_thread.start()
+
         try:
             # Run with stdin/stderr passthrough for interactive auth (AWS SSO)
             # Only capture stdout for JSON parsing
@@ -78,28 +101,39 @@ class ClaudeClient:
                 check=True
             )
 
-            # Debug: Print to stderr so it shows up (stdout is captured)
-            import sys
-            print(f"\n[DEBUG] About to parse stdout, length: {len(result.stdout)}", file=sys.stderr)
+            stop_spinner.set()
+            spinner_thread.join() # Wait for spinner to finish clearing its line
+
+            # Debug: Print to debug log
+            logger.debug(f"About to parse stdout, length: {len(result.stdout)}")
 
             # Parse JSON output
             parsed_result = self._parse_json_output(result.stdout)
 
             # Debug: Show what we got after parsing
-            print(f"[DEBUG] Parse result type: {type(parsed_result)}", file=sys.stderr)
+            logger.debug(f"Parse result type: {type(parsed_result)}")
             if isinstance(parsed_result, dict):
-                print(f"[DEBUG] Parse result keys: {list(parsed_result.keys())[:10]}", file=sys.stderr)
+                logger.debug(f"Parse result keys: {list(parsed_result.keys())[:10]}")
 
             return parsed_result
 
         except subprocess.TimeoutExpired:
+            stop_spinner.set()
+            spinner_thread.join()
             raise TimeoutError(
                 f"Claude CLI execution exceeded timeout of {self.timeout}s"
             )
         except subprocess.CalledProcessError as e:
+            stop_spinner.set()
+            spinner_thread.join()
             raise RuntimeError(
                 f"Claude CLI execution failed with return code {e.returncode}"
             )
+        except Exception as e:
+            # Ensure spinner is stopped even for unexpected errors
+            stop_spinner.set()
+            spinner_thread.join()
+            raise # Re-raise the exception
 
     def _parse_json_output(self, output: str) -> Dict[str, Any]:
         """
@@ -114,87 +148,63 @@ class ClaudeClient:
         Raises:
             json.JSONDecodeError: If no valid JSON found
         """
-        # Debug: Print raw output for troubleshooting (to stderr so it shows)
-        import sys
-        print(f"\n[DEBUG] Raw Claude CLI output (first 500 chars):", file=sys.stderr)
-        print(output[:500], file=sys.stderr)
-        print(f"[DEBUG] Output type: {type(output)}, Length: {len(output)}", file=sys.stderr)
+        # Debug: Print raw output for troubleshooting
+        logger.debug(f"Raw Claude CLI output (first 500 chars):\n{output[:500]}")
+        logger.debug(f"Output type: {type(output)}, Length: {len(output)}")
 
         # Try direct JSON parse first
         try:
             parsed = json.loads(output)
-            print(f"[DEBUG] Parsed JSON successfully. Top-level keys: {list(parsed.keys()) if isinstance(parsed, dict) else 'not a dict'}", file=sys.stderr)
+            logger.debug(f"Parsed JSON successfully. Top-level keys: {list(parsed.keys()) if isinstance(parsed, dict) else 'not a dict'}")
 
             # Check if this is a Claude CLI response wrapper
-            # Format: {'type': 'result', 'subtype': ..., 'content': [...] or 'structured_output': {...}}
             if isinstance(parsed, dict):
-                # Extract content from wrapper if present
                 if 'type' in parsed and parsed.get('type') == 'result':
-                    print(f"[DEBUG] Detected wrapper format with type='result'", file=sys.stderr)
+                    logger.debug("Detected wrapper format with type='result'")
 
-                    # First check for structured_output field (used by --output-format json)
                     if 'structured_output' in parsed:
                         structured_output = parsed['structured_output']
-                        print(f"[DEBUG] Found 'structured_output' field, type: {type(structured_output)}", file=sys.stderr)
+                        logger.debug(f"Found 'structured_output' field, type: {type(structured_output)}")
                         if isinstance(structured_output, dict):
-                            print(f"[DEBUG] Returning structured_output directly", file=sys.stderr)
                             return structured_output
 
-                    # Look for actual content in various possible fields
                     for content_field in ['content', 'data', 'text', 'output']:
                         if content_field in parsed:
                             content = parsed[content_field]
-                            print(f"[DEBUG] Found content field '{content_field}', type: {type(content)}", file=sys.stderr)
+                            logger.debug(f"Found content field '{content_field}', type: {type(content)}")
 
-                            # If content is a list, look for text blocks
                             if isinstance(content, list):
-                                print(f"[DEBUG] Content is list with {len(content)} items", file=sys.stderr)
                                 for i, item in enumerate(content):
-                                    if isinstance(item, dict):
-                                        print(f"[DEBUG] Item {i} keys: {list(item.keys())}", file=sys.stderr)
-                                        # Look for text field in content items
-                                        if 'text' in item:
-                                            text_content = item['text']
-                                            print(f"[DEBUG] Found text field in item {i}, first 200 chars: {text_content[:200]}", file=sys.stderr)
+                                    if isinstance(item, dict) and 'text' in item:
+                                        text_content = item['text']
+                                        logger.debug(f"Found text field in item {i}, first 200 chars: {text_content[:200]}")
+                                        try:
+                                            extracted = json.loads(text_content)
+                                            logger.debug("Successfully extracted JSON from text field!")
+                                            return extracted
+                                        except (json.JSONDecodeError, TypeError) as e:
+                                            logger.debug(f"Failed to parse text as JSON: {e}")
+                                            md_pattern = r'```(?:json)?\s*(\{.*?\})\s*```'
+                                            md_match = re.search(md_pattern, text_content, re.DOTALL)
+                                            if md_match:
+                                                try:
+                                                    extracted = json.loads(md_match.group(1))
+                                                    logger.debug("Successfully extracted JSON from markdown!")
+                                                    return extracted
+                                                except json.JSONDecodeError:
+                                                    pass
 
-                                            # Try parsing as JSON directly
-                                            try:
-                                                extracted = json.loads(text_content)
-                                                print(f"[DEBUG] Successfully extracted JSON from text field!", file=sys.stderr)
-                                                return extracted
-                                            except (json.JSONDecodeError, TypeError) as e:
-                                                print(f"[DEBUG] Failed to parse text as JSON: {e}", file=sys.stderr)
-
-                                                # Try extracting from markdown code block in text
-                                                md_pattern = r'```(?:json)?\s*(\{.*?\})\s*```'
-                                                md_match = re.search(md_pattern, text_content, re.DOTALL)
-                                                if md_match:
-                                                    print(f"[DEBUG] Found markdown code block in text field", file=sys.stderr)
-                                                    try:
-                                                        extracted = json.loads(md_match.group(1))
-                                                        print(f"[DEBUG] Successfully extracted JSON from markdown!", file=sys.stderr)
-                                                        return extracted
-                                                    except json.JSONDecodeError:
-                                                        print(f"[DEBUG] Failed to parse markdown JSON", file=sys.stderr)
-                                                        pass
-
-                            # If content is a string, try to parse it
                             elif isinstance(content, str):
-                                print(f"[DEBUG] Content is string, attempting to parse...", file=sys.stderr)
                                 try:
                                     return json.loads(content)
                                 except json.JSONDecodeError:
                                     pass
 
-                            # If content is already a dict, return it
                             elif isinstance(content, dict):
-                                print(f"[DEBUG] Content is dict, returning as-is", file=sys.stderr)
                                 return content
 
-                # If no wrapper detected or extraction failed, return as-is
-                print(f"[DEBUG] No wrapper extraction successful, returning parsed as-is", file=sys.stderr)
-                # Dump full structure for debugging
-                print(f"[DEBUG] Full parsed structure: {json.dumps(parsed, indent=2)[:1000]}", file=sys.stderr)
+                logger.debug("No wrapper extraction successful, returning parsed as-is")
+                logger.debug(f"Full parsed structure: {json.dumps(parsed, indent=2)[:1000]}")
                 return parsed
 
             return parsed
