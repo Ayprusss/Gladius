@@ -20,16 +20,6 @@ This project demonstrates a realistic AI-assisted engineering pipeline where sta
 - ✅ **Mock-First** - Develop and test without live Jira connection
 - ✅ **Auditable** - All artifacts persisted in timestamped runs
 
-## Project Status
-
-**✅ Phase 1 Complete** - Foundation (structure, CLI wrapper, schemas, mock MCP)
-**✅ Phase 2 Complete** - Agent Implementation (Planner, Implementer, Reviewer)
-**✅ Phase 3 Complete** - Orchestration (artifact manager, main orchestrator, CLI)
-**✅ Phase 4 Complete** - Testing & Configuration
-
-🎉 **ALL PHASES COMPLETE** - Production ready with ~2,500+ lines of code
-
-See [PROJECT_SUMMARY.md](docs/PROJECT_SUMMARY.md) for detailed implementation status.
 
 ## Quick Start
 

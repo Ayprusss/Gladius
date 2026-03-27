@@ -12,12 +12,15 @@ Get Gladius running in 5 minutes.
 
 ## Installation
 
+For global usage from any project folder, we recommend `pipx` or standard global `pip` installation:
+
 ```bash
 cd Google_Gladius
-pip install -e .
+pipx install .
 ```
+*(Alternatively, use `pip install .` or `pip install -e .` based on your python environment).*
 
-This installs dependencies and registers the `gladius` command.
+This installs dependencies, bundles configuration, and registers the `gladius` command globally.
 
 ## Launch the Terminal
 
