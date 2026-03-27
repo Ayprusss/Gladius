@@ -68,20 +68,15 @@ def _rule(char: str = "─") -> str:
     return DIM + char * _tw() + R
 
 
-LOGO = r"""
-   ________          ___           
-  / ____/ /___ _____/ (_)_  _______
- / / __/ / __ `/ __  / / / / / ___/
-/ /_/ / / /_/ / /_/ / / /_/ (__  ) 
-\____/_/\__,_/\__,_/_/\__,_/____/  
-"""[1:]  # strip leading newline
-
+from src.utils.ascii_art import GLADIUS_LOGOS
+import random
 
 # ── Banner ─────────────────────────────────────────────────────────────────────
 def print_banner(model: str, project_path: Path, artifact_manager: ArtifactManager) -> None:
     w = _tw()
     print()
-    for line in LOGO.splitlines():
+    logo = random.choice(GLADIUS_LOGOS)
+    for line in logo.splitlines():
         print(ORG + B + line + R)
     print(_rule())
 

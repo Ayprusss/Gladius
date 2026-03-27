@@ -137,93 +137,79 @@ class ClaudeClient:
 
     def _parse_json_output(self, output: str) -> Dict[str, Any]:
         """
-        Parse JSON output, handling markdown-wrapped JSON and Claude CLI response wrappers
-
-        Args:
-            output: Raw output from Claude CLI
-
-        Returns:
-            Parsed JSON dict
-
-        Raises:
-            json.JSONDecodeError: If no valid JSON found
+        Parse JSON output, handling markdown-wrapped JSON, Claude CLI response wrappers, and AWS SSO preambles
         """
-        # Debug: Print raw output for troubleshooting
         logger.debug(f"Raw Claude CLI output (first 500 chars):\n{output[:500]}")
-        logger.debug(f"Output type: {type(output)}, Length: {len(output)}")
+        
+        target_keys = {'plan', 'changes', 'verdict', 'issues', 'patch', 'files_to_modify', 'files_to_change'}
 
-        # Try direct JSON parse first
-        try:
-            parsed = json.loads(output)
-            logger.debug(f"Parsed JSON successfully. Top-level keys: {list(parsed.keys()) if isinstance(parsed, dict) else 'not a dict'}")
-
-            # Define target keys that identify our actual agent schemas
-            target_keys = {'plan', 'changes', 'verdict', 'issues', 'patch', 'files_to_modify'}
-
-            def extract_from_string(s: str) -> Optional[Dict[str, Any]]:
+        def extract_from_string(s: str) -> Optional[Dict[str, Any]]:
+            try:
+                obj = json.loads(s)
+                if isinstance(obj, dict) and any(k in obj for k in target_keys):
+                    return obj
+            except json.JSONDecodeError:
+                pass
+            
+            md_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', s, re.DOTALL)
+            if md_match:
                 try:
-                    obj = json.loads(s)
+                    obj = json.loads(md_match.group(1))
                     if isinstance(obj, dict) and any(k in obj for k in target_keys):
                         return obj
                 except json.JSONDecodeError:
                     pass
-                md_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', s, re.DOTALL)
-                if md_match:
-                    try:
-                        obj = json.loads(md_match.group(1))
-                        if isinstance(obj, dict) and any(k in obj for k in target_keys):
-                            return obj
-                    except json.JSONDecodeError:
-                        pass
-                return None
-
-            def search_parsed(obj: Any) -> Optional[Dict[str, Any]]:
-                if isinstance(obj, dict):
-                    if any(k in obj for k in target_keys):
+            
+            matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', s, re.DOTALL)
+            for m in matches:
+                try:
+                    obj = json.loads(m)
+                    if isinstance(obj, dict) and any(k in obj for k in target_keys):
                         return obj
-                    for v in obj.values():
-                        res = search_parsed(v)
-                        if res: return res
-                elif isinstance(obj, list):
-                    for v in obj:
-                        res = search_parsed(v)
-                        if res: return res
-                elif isinstance(obj, str):
-                    res = extract_from_string(obj)
-                    if res: return res
-                return None
+                except json.JSONDecodeError:
+                    continue
+            return None
 
-            # Attempt a deep search for the target schema
+        def search_parsed(obj: Any) -> Optional[Dict[str, Any]]:
+            if isinstance(obj, dict):
+                if any(k in obj for k in target_keys):
+                    return obj
+                for v in obj.values():
+                    res = search_parsed(v)
+                    if res: return res
+            elif isinstance(obj, list):
+                for v in obj:
+                    res = search_parsed(v)
+                    if res: return res
+            elif isinstance(obj, str):
+                res = extract_from_string(obj)
+                if res: return res
+            return None
+
+        # First, see if the entire raw string can directly yield the schema we want
+        direct_extract = extract_from_string(output)
+        if direct_extract:
+            return direct_extract
+
+        # Attempt to parse whatever JSON wrapper we can find
+        parsed = None
+        try:
+            parsed = json.loads(output)
+        except json.JSONDecodeError:
+            matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', output, re.DOTALL)
+            for m in matches:
+                try:
+                    parsed = json.loads(m)
+                    break
+                except json.JSONDecodeError:
+                    continue
+
+        if parsed is not None:
             found_schema = search_parsed(parsed)
             if found_schema:
                 logger.debug("Successfully extracted target schema from parsed wrapper.")
                 return found_schema
-
             return parsed
-        except json.JSONDecodeError:
-            pass
-
-        # Try extracting from markdown code block
-        # Matches: ```json\n{...}\n``` or ```\n{...}\n```
-        pattern = r'```(?:json)?\s*(\{.*?\})\s*```'
-        match = re.search(pattern, output, re.DOTALL)
-
-        if match:
-            try:
-                return json.loads(match.group(1))
-            except json.JSONDecodeError:
-                pass
-
-        # Try finding JSON object in text
-        # Look for {...} pattern
-        json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
-        matches = re.findall(json_pattern, output, re.DOTALL)
-
-        for potential_json in matches:
-            try:
-                return json.loads(potential_json)
-            except json.JSONDecodeError:
-                continue
 
         raise json.JSONDecodeError(
             f"No valid JSON found in output: {output[:200]}...",
