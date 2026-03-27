@@ -14,7 +14,7 @@ class ReviewerAgent(BaseAgent[ReviewerOutput]):
         super().__init__(*args, **kwargs)
 
         # Load system prompt from file
-        prompt_path = Path(__file__).parent.parent.parent / "prompts" / "reviewer_prompt.txt"
+        prompt_path = Path(__file__).parent.parent / "prompts" / "reviewer_prompt.txt"
         with open(prompt_path, 'r', encoding='utf-8') as f:
             self.system_prompt = f.read()
 

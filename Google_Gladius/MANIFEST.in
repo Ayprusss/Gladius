@@ -1,2 +1,2 @@
-recursive-include config *
-recursive-include prompts *
+recursive-include src/config *
+recursive-include src/prompts *

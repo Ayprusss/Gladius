@@ -12,7 +12,7 @@ class ConfigLoader:
     @staticmethod
     def load_config() -> Dict[str, Any]:
         # Path to config/settings.yaml relative to this file
-        config_path = Path(__file__).parent.parent.parent / 'config' / 'settings.yaml'
+        config_path = Path(__file__).parent.parent / 'config' / 'settings.yaml'
         config = {}
         
         if config_path.exists():
