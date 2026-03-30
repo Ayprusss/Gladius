@@ -1,0 +1,2969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How Gladius Works - Interactive Course</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==================== CSS DESIGN SYSTEM ==================== */
+    :root {
+      /* --- BACKGROUNDS --- */
+      --color-bg:             #FAF7F2;
+      --color-bg-warm:        #F5F0E8;
+      --color-bg-code:        #1E1E2E;
+      --color-text:           #2C2A28;
+      --color-text-secondary: #6B6560;
+      --color-text-muted:     #9E9790;
+      --color-border:         #E5DFD6;
+      --color-border-light:   #EEEBE5;
+      --color-surface:        #FFFFFF;
+      --color-surface-warm:   #FDF9F3;
+
+      /* --- ACCENT (coral for multi-agent coordination feel) --- */
+      --color-accent:         #E06B56;
+      --color-accent-hover:   #CA5E4B;
+      --color-accent-light:   #FDEEE9;
+      --color-accent-muted:   #E8836C;
+
+      /* --- SEMANTIC --- */
+      --color-success:        #2D8B55;
+      --color-success-light:  #E8F5EE;
+      --color-error:          #C93B3B;
+      --color-error-light:    #FDE8E8;
+      --color-info:           #2A7B9B;
+      --color-info-light:     #E4F2F7;
+
+      /* --- ACTOR COLORS (for the three agents) --- */
+      --color-actor-1:        #E06B56;  /* Planner - coral */
+      --color-actor-2:        #2A7B9B;  /* Implementer - teal */
+      --color-actor-3:        #7B6DAA;  /* Reviewer - plum */
+      --color-actor-4:        #D4A843;  /* Orchestrator - golden */
+      --color-actor-5:        #2D8B55;  /* Claude CLI - forest */
+
+      /* --- FONTS --- */
+      --font-display:  'Bricolage Grotesque', Georgia, serif;
+      --font-body:     'DM Sans', -apple-system, sans-serif;
+      --font-mono:     'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+      /* --- TYPE SCALE --- */
+      --text-xs:   0.75rem;
+      --text-sm:   0.875rem;
+      --text-base: 1rem;
+      --text-lg:   1.125rem;
+      --text-xl:   1.25rem;
+      --text-2xl:  1.5rem;
+      --text-3xl:  1.875rem;
+      --text-4xl:  2.25rem;
+      --text-5xl:  3rem;
+      --text-6xl:  3.75rem;
+
+      /* --- LINE HEIGHTS --- */
+      --leading-tight:  1.15;
+      --leading-snug:   1.3;
+      --leading-normal: 1.6;
+      --leading-loose:  1.8;
+
+      /* --- SPACING --- */
+      --space-1:  0.25rem;
+      --space-2:  0.5rem;
+      --space-3:  0.75rem;
+      --space-4:  1rem;
+      --space-5:  1.25rem;
+      --space-6:  1.5rem;
+      --space-8:  2rem;
+      --space-10: 2.5rem;
+      --space-12: 3rem;
+      --space-16: 4rem;
+      --space-20: 5rem;
+      --space-24: 6rem;
+
+      --content-width:      800px;
+      --content-width-wide: 1000px;
+      --nav-height:         50px;
+      --radius-sm:  8px;
+      --radius-md:  12px;
+      --radius-lg:  16px;
+      --radius-full: 9999px;
+
+      /* --- SHADOWS --- */
+      --shadow-sm:  0 1px 2px rgba(44, 42, 40, 0.05);
+      --shadow-md:  0 4px 12px rgba(44, 42, 40, 0.08);
+      --shadow-lg:  0 8px 24px rgba(44, 42, 40, 0.1);
+      --shadow-xl:  0 16px 48px rgba(44, 42, 40, 0.12);
+
+      /* --- ANIMATIONS --- */
+      --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+      --duration-fast:   150ms;
+      --duration-normal: 300ms;
+      --duration-slow:   500ms;
+      --stagger-delay:   120ms;
+    }
+
+    /* ==================== GLOBAL RESET ==================== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-snap-type: y proximity;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: var(--leading-normal);
+      color: var(--color-text);
+      background: var(--color-bg);
+      background-image: radial-gradient(
+        ellipse at 20% 50%,
+        rgba(224, 107, 86, 0.03) 0%,
+        transparent 50%
+      );
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: var(--color-border);
+      border-radius: var(--radius-full);
+    }
+
+    /* Code blocks must wrap */
+    pre, code {
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-x: hidden;
+    }
+
+    /* ==================== NAVIGATION ==================== */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-height);
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      z-index: 1000;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .progress-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: var(--color-accent);
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 100%;
+      padding: 0 var(--space-6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--text-lg);
+      color: var(--color-text);
+    }
+
+    .nav-dots {
+      display: flex;
+      gap: var(--space-3);
+    }
+
+    .nav-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid var(--color-text-muted);
+      background: transparent;
+      cursor: pointer;
+      transition: all var(--duration-fast);
+      position: relative;
+    }
+
+    .nav-dot:hover {
+      border-color: var(--color-accent);
+      transform: scale(1.2);
+    }
+
+    .nav-dot.active {
+      border-color: var(--color-accent);
+      background: var(--color-accent);
+      box-shadow: 0 0 0 3px var(--color-accent-light);
+    }
+
+    .nav-dot.visited {
+      background: var(--color-accent-muted);
+      border-color: var(--color-accent-muted);
+    }
+
+    .nav-dot::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--color-bg-code);
+      color: #CDD6F4;
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs);
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--duration-fast);
+    }
+
+    .nav-dot:hover::after {
+      opacity: 1;
+    }
+
+    /* ==================== MODULE STRUCTURE ==================== */
+    .module {
+      min-height: 100vh;
+      min-height: 100dvh;
+      scroll-snap-align: start;
+      padding: var(--space-16) var(--space-6);
+      padding-top: calc(var(--nav-height) + var(--space-12));
+    }
+
+    .module-content {
+      max-width: var(--content-width);
+      margin: 0 auto;
+    }
+
+    .module-header {
+      margin-bottom: var(--space-16);
+    }
+
+    .module-number {
+      display: block;
+      font-family: var(--font-display);
+      font-size: var(--text-6xl);
+      font-weight: 800;
+      color: var(--color-accent);
+      opacity: 0.15;
+      line-height: var(--leading-tight);
+      margin-bottom: var(--space-2);
+    }
+
+    .module-title {
+      font-family: var(--font-display);
+      font-size: var(--text-4xl);
+      font-weight: 700;
+      line-height: var(--leading-tight);
+      margin-bottom: var(--space-4);
+    }
+
+    .module-subtitle {
+      font-size: var(--text-lg);
+      color: var(--color-text-secondary);
+      line-height: var(--leading-normal);
+    }
+
+    .module-body {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-12);
+    }
+
+    .screen {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+
+    .screen-heading {
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+      font-weight: 600;
+      line-height: var(--leading-snug);
+    }
+
+    .screen p {
+      line-height: var(--leading-normal);
+      max-width: 65ch;
+    }
+
+    /* ==================== ANIMATIONS ==================== */
+    .animate-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity var(--duration-slow) var(--ease-out),
+                  transform var(--duration-slow) var(--ease-out);
+    }
+
+    .animate-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .stagger-children > .animate-in {
+      transition-delay: calc(var(--stagger-index, 0) * var(--stagger-delay));
+    }
+
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ==================== GLOSSARY TOOLTIPS ==================== */
+    .term {
+      border-bottom: 1.5px dashed var(--color-accent-muted);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .term:hover, .term.active {
+      border-bottom-color: var(--color-accent);
+      color: var(--color-accent);
+    }
+
+    .term-tooltip {
+      position: fixed;
+      background: var(--color-bg-code);
+      color: #CDD6F4;
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+      font-family: var(--font-body);
+      line-height: var(--leading-normal);
+      width: max(200px, min(320px, 80vw));
+      box-shadow: var(--shadow-lg);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--duration-fast);
+      z-index: 10000;
+    }
+
+    .term-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: var(--color-bg-code);
+    }
+
+    .term-tooltip.visible {
+      opacity: 1;
+    }
+
+    .term-tooltip.flip {
+      bottom: auto;
+      top: calc(100% + 8px);
+    }
+
+    .term-tooltip.flip::after {
+      top: auto;
+      bottom: 100%;
+      border-top-color: transparent;
+      border-bottom-color: var(--color-bg-code);
+    }
+
+    /* ==================== STEP CARDS ==================== */
+    .step-cards {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      margin: var(--space-8) 0;
+    }
+
+    .step-card {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      border-left: 3px solid var(--color-accent);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--color-accent);
+      color: white;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      flex-shrink: 0;
+    }
+
+    .step-body strong {
+      display: block;
+      margin-bottom: var(--space-1);
+    }
+
+    .step-body p {
+      margin: var(--space-1) 0 0;
+      color: var(--color-text-secondary);
+      font-size: var(--text-sm);
+    }
+
+    /* ==================== PATTERN CARDS ==================== */
+    .pattern-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: var(--space-4);
+      margin: var(--space-8) 0;
+    }
+
+    .pattern-card {
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      padding: var(--space-6);
+      box-shadow: var(--shadow-sm);
+      transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal);
+    }
+
+    .pattern-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .pattern-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: var(--space-3);
+    }
+
+    .pattern-title {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      margin-bottom: var(--space-2);
+    }
+
+    .pattern-desc {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      line-height: var(--leading-normal);
+    }
+
+    /* ==================== ICON ROWS ==================== */
+    .icon-rows {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      margin: var(--space-8) 0;
+    }
+
+    .icon-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4);
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .icon-row p {
+      margin: 0;
+      color: var(--color-text-secondary);
+      font-size: var(--text-sm);
+    }
+
+    .icon-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    /* ==================== CALLOUT BOXES ==================== */
+    .callout {
+      display: flex;
+      gap: var(--space-4);
+      padding: var(--space-5);
+      border-radius: var(--radius-md);
+      margin: var(--space-8) 0;
+    }
+
+    .callout-accent {
+      background: var(--color-accent-light);
+      border-left: 3px solid var(--color-accent);
+    }
+
+    .callout-info {
+      background: var(--color-info-light);
+      border-left: 3px solid var(--color-info);
+    }
+
+    .callout-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .callout-title {
+      display: block;
+      font-weight: 600;
+      margin-bottom: var(--space-2);
+    }
+
+    .callout-content p {
+      margin: 0;
+    }
+
+    /* ==================== CODE TRANSLATION BLOCKS ==================== */
+    .translation-block {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      margin: var(--space-8) 0;
+    }
+
+    .translation-code {
+      background: var(--color-bg-code);
+      color: #CDD6F4;
+      padding: var(--space-6);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.7;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .translation-code pre,
+    .translation-code code {
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-x: hidden;
+    }
+
+    .translation-english {
+      background: var(--color-surface-warm);
+      padding: var(--space-6);
+      font-size: var(--text-sm);
+      line-height: 1.7;
+      border-left: 3px solid var(--color-accent);
+    }
+
+    .translation-label {
+      position: absolute;
+      top: var(--space-2);
+      right: var(--space-3);
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0.5;
+    }
+
+    .translation-english .translation-label {
+      color: var(--color-text-muted);
+    }
+
+    .translation-lines {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .translation-lines .tl {
+      margin: 0;
+    }
+
+    /* Syntax highlighting */
+    .code-keyword  { color: #CBA6F7; }
+    .code-string   { color: #A6E3A1; }
+    .code-function { color: #89B4FA; }
+    .code-comment  { color: #6C7086; }
+    .code-number   { color: #FAB387; }
+    .code-property { color: #F9E2AF; }
+    .code-operator { color: #94E2D5; }
+
+    /* ==================== QUIZ ELEMENTS ==================== */
+    .quiz-container {
+      margin: var(--space-8) 0;
+    }
+
+    .quiz-question-block {
+      margin-bottom: var(--space-6);
+    }
+
+    .quiz-question {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      margin-bottom: var(--space-4);
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      margin-bottom: var(--space-3);
+    }
+
+    .quiz-option {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      transition: border-color var(--duration-fast), background var(--duration-fast);
+    }
+
+    .quiz-option:hover {
+      border-color: var(--color-accent-muted);
+    }
+
+    .quiz-option.selected {
+      border-color: var(--color-accent);
+      background: var(--color-accent-light);
+    }
+
+    .quiz-option.correct {
+      border-color: var(--color-success);
+      background: var(--color-success-light);
+    }
+
+    .quiz-option.incorrect {
+      border-color: var(--color-error);
+      background: var(--color-error-light);
+    }
+
+    .quiz-option-radio {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--color-border);
+      transition: all var(--duration-fast);
+      flex-shrink: 0;
+    }
+
+    .quiz-option.selected .quiz-option-radio {
+      border-color: var(--color-accent);
+      background: var(--color-accent);
+      box-shadow: inset 0 0 0 3px white;
+    }
+
+    .quiz-feedback {
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height var(--duration-normal), opacity var(--duration-normal);
+    }
+
+    .quiz-feedback.show {
+      max-height: 200px;
+      opacity: 1;
+      padding: var(--space-3);
+      margin-top: var(--space-2);
+      border-radius: var(--radius-sm);
+    }
+
+    .quiz-feedback.success {
+      background: var(--color-success-light);
+      color: var(--color-success);
+    }
+
+    .quiz-feedback.error {
+      background: var(--color-error-light);
+      color: var(--color-error);
+    }
+
+    .quiz-check-btn, .quiz-reset-btn {
+      padding: var(--space-3) var(--space-5);
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--duration-fast);
+      margin-right: var(--space-2);
+    }
+
+    .quiz-check-btn {
+      background: var(--color-accent);
+      color: white;
+    }
+
+    .quiz-check-btn:hover {
+      background: var(--color-accent-hover);
+    }
+
+    .quiz-reset-btn {
+      background: var(--color-border);
+      color: var(--color-text);
+    }
+
+    .quiz-reset-btn:hover {
+      background: var(--color-border-light);
+    }
+
+    /* ==================== CHAT ANIMATION ==================== */
+    .chat-window {
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      padding: var(--space-6);
+      margin: var(--space-8) 0;
+      max-width: 600px;
+    }
+
+    .chat-messages {
+      min-height: 300px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    .chat-message {
+      display: flex;
+      gap: var(--space-3);
+      align-items: flex-start;
+    }
+
+    .chat-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: var(--text-sm);
+      flex-shrink: 0;
+    }
+
+    .chat-bubble {
+      background: var(--color-bg-warm);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      max-width: 70%;
+    }
+
+    .chat-sender {
+      display: block;
+      font-weight: 600;
+      font-size: var(--text-xs);
+      margin-bottom: var(--space-1);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .chat-bubble p {
+      margin: 0;
+      font-size: var(--text-sm);
+    }
+
+    .chat-typing {
+      display: flex;
+      gap: var(--space-3);
+      align-items: center;
+    }
+
+    .chat-typing-dots {
+      display: flex;
+      gap: var(--space-1);
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-bg-warm);
+      border-radius: var(--radius-md);
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-text-muted);
+      animation: typingBounce 1.4s infinite;
+    }
+
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typingBounce {
+      0%, 60%, 100% {
+        transform: translateY(0);
+      }
+      30% {
+        transform: translateY(-6px);
+      }
+    }
+
+    .chat-controls {
+      display: flex;
+      gap: var(--space-2);
+      align-items: center;
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--color-border);
+    }
+
+    .chat-controls button {
+      padding: var(--space-2) var(--space-4);
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--color-accent);
+      color: white;
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background var(--duration-fast);
+    }
+
+    .chat-controls button:hover {
+      background: var(--color-accent-hover);
+    }
+
+    .chat-progress {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-left: auto;
+    }
+
+    /* ==================== RESPONSIVE ==================== */
+    @media (max-width: 768px) {
+      :root {
+        --text-4xl: 1.875rem;
+        --text-5xl: 2.25rem;
+        --text-6xl: 3rem;
+      }
+
+      .module {
+        padding: var(--space-8) var(--space-4);
+        padding-top: calc(var(--nav-height) + var(--space-8));
+      }
+
+      .nav-title {
+        font-size: var(--text-base);
+      }
+
+      .translation-block {
+        grid-template-columns: 1fr;
+      }
+
+      .translation-english {
+        border-left: none;
+        border-top: 3px solid var(--color-accent);
+      }
+
+      .pattern-cards {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      :root {
+        --text-4xl: 1.5rem;
+        --text-5xl: 1.875rem;
+        --text-6xl: 2.25rem;
+      }
+
+      .pattern-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="progress-bar" role="progressbar" aria-valuenow="0"></div>
+    <div class="nav-inner">
+      <span class="nav-title">How Gladius Works</span>
+      <div class="nav-dots">
+        <button class="nav-dot active" data-target="module-1" data-tooltip="Request to Code"
+                role="tab" aria-label="Module 1"></button>
+        <button class="nav-dot" data-target="module-2" data-tooltip="The Three Agents"
+                role="tab" aria-label="Module 2"></button>
+        <button class="nav-dot" data-target="module-3" data-tooltip="How Agents Talk"
+                role="tab" aria-label="Module 3"></button>
+        <button class="nav-dot" data-target="module-4" data-tooltip="The Claude CLI"
+                role="tab" aria-label="Module 4"></button>
+        <button class="nav-dot" data-target="module-5" data-tooltip="The Review Loop"
+                role="tab" aria-label="Module 5"></button>
+        <button class="nav-dot" data-target="module-6" data-tooltip="The Orchestrator"
+                role="tab" aria-label="Module 6"></button>
+        <button class="nav-dot" data-target="module-7" data-tooltip="The Big Picture"
+                role="tab" aria-label="Module 7"></button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Module 1: From Request to Working Code -->
+  <section class="module" id="module-1" style="background: var(--color-bg)">
+    <div class="module-content">
+      <header class="module-header animate-in">
+        <span class="module-number">01</span>
+        <h1 class="module-title">From Request to Working Code</h1>
+        <p class="module-subtitle">What Gladius does and how your request becomes reality</p>
+      </header>
+
+      <div class="module-body">
+        <!-- Screen 1: What is Gladius? -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">What is Gladius?</h2>
+          <p>Imagine you could describe a coding task in plain English — like "add login to the homepage" — and have <span class="term" data-definition="Artificial intelligence — computer systems that can perform tasks that normally require human intelligence, like understanding language and making decisions">AI</span> agents automatically plan it, code it, and review it for you. That's Gladius.</p>
+
+          <p>Gladius is a <span class="term" data-definition="A multi-agent system uses multiple AI agents that work together, each with a specialized role — like a team of experts collaborating on a project">multi-agent AI system</span> that coordinates three specialized <span class="term" data-definition="An agent is an AI system designed to autonomously perform specific tasks — think of it as a digital worker with one job to do really well">agents</span> to handle software development tickets end-to-end:</p>
+
+          <div class="icon-rows">
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-actor-1)">📋</div>
+              <div>
+                <strong>Planner</strong>
+                <p>Analyzes your request and creates a step-by-step implementation plan</p>
+              </div>
+            </div>
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-actor-2)">💻</div>
+              <div>
+                <strong>Implementer</strong>
+                <p>Writes the actual code changes based on the plan</p>
+              </div>
+            </div>
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-actor-3)">👁️</div>
+              <div>
+                <strong>Reviewer</strong>
+                <p>Checks the code for quality, correctness, and security issues</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 2: The Journey of a Request -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">The Journey of a Request</h2>
+          <p>Let's trace what happens when you type: <strong>"Add input validation to the login form"</strong></p>
+
+          <div class="step-cards">
+            <div class="step-card">
+              <div class="step-num">1</div>
+              <div class="step-body">
+                <strong>You submit your request</strong>
+                <p>Type it in plain English or use a ticket ID from <span class="term" data-definition="Jira is project management software where teams track tasks and bugs — like a digital to-do list for software projects">Jira</span>. Gladius figures out what you mean.</p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-num">2</div>
+              <div class="step-body">
+                <strong>Planner analyzes the task</strong>
+                <p>Reads your request, understands the context, and breaks it into concrete steps: "Add regex validation, show error messages, add tests"</p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-num">3</div>
+              <div class="step-body">
+                <strong>Implementer writes the code</strong>
+                <p>Takes the plan and generates actual code changes — new functions, modified files, test cases</p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-num">4</div>
+              <div class="step-body">
+                <strong>Reviewer checks the work</strong>
+                <p>Looks for bugs, security issues, and quality problems. If it finds critical issues, sends feedback to Implementer for a revision</p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-num">5</div>
+              <div class="step-body">
+                <strong>You get the results</strong>
+                <p>A complete audit trail: the plan, the code changes as <span class="term" data-definition="A patch is a file showing the differences between the old and new versions of code — like track changes in a Word document but for code">patches</span>, the review verdict, and all the feedback</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 3: Under the Hood -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Under the Hood: The Entry Point</h2>
+          <p>When you run <code style="background: var(--color-bg-warm); padding: 2px 6px; border-radius: 4px;">gladius "add validation"</code>, here's the first code that runs:</p>
+
+          <div class="translation-block">
+            <div class="translation-code">
+              <span class="translation-label">CODE</span>
+              <pre><code><span class="code-keyword">def</span> <span class="code-function">run_pipeline</span>(
+    request: <span class="code-keyword">str</span>,
+    model: <span class="code-keyword">str</span> = <span class="code-string">"sonnet"</span>,
+    project_path: Path = <span class="code-keyword">None</span>
+):
+    <span class="code-comment"># Get ticket data</span>
+    ticket_data = mcp_client.<span class="code-function">get_ticket</span>(request)
+
+    <span class="code-comment"># Run three agents in sequence</span>
+    plan = planner.<span class="code-function">execute</span>(ticket_data)
+    code = implementer.<span class="code-function">execute</span>(plan)
+    review = reviewer.<span class="code-function">execute</span>(code)</code></pre>
+            </div>
+            <div class="translation-english">
+              <span class="translation-label">PLAIN ENGLISH</span>
+              <div class="translation-lines">
+                <p class="tl">Define a function that takes your request, which AI model to use, and where your code lives...</p>
+                <p class="tl">Convert your plain English request into a structured ticket that agents can understand...</p>
+                <p class="tl">Hand the ticket to Planner, who creates a step-by-step plan...</p>
+                <p class="tl">Give the plan to Implementer, who writes the actual code...</p>
+                <p class="tl">Send the code to Reviewer, who checks it for problems and decides whether to approve it or request changes.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout callout-accent">
+            <div class="callout-icon">💡</div>
+            <div class="callout-content">
+              <strong class="callout-title">Key Insight</strong>
+              <p>Each agent runs independently — they don't share memory or state. They only communicate through <span class="term" data-definition="JSON (JavaScript Object Notation) is a way to structure data as text that both humans and computers can easily read — like a standardized form with labeled fields">JSON</span> messages, like coworkers passing notes. This makes the system reliable — if one agent fails, it doesn't crash the others.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 4: What You'll Learn -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">What You'll Learn in This Course</h2>
+          <p>By the end, you'll understand:</p>
+
+          <div class="pattern-cards">
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+              <div class="pattern-icon" style="background: var(--color-actor-1)">🎭</div>
+              <h4 class="pattern-title">The Actors</h4>
+              <p class="pattern-desc">Who the three agents are and what each one does</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+              <div class="pattern-icon" style="background: var(--color-actor-5)">💬</div>
+              <h4 class="pattern-title">How They Talk</h4>
+              <p class="pattern-desc">How agents communicate without sharing memory</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+              <div class="pattern-icon" style="background: var(--color-actor-4)">🔄</div>
+              <h4 class="pattern-title">The Review Loop</h4>
+              <p class="pattern-desc">How Reviewer gives feedback and Implementer improves</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid var(--color-info)">
+              <div class="pattern-icon" style="background: var(--color-info)">🏗️</div>
+              <h4 class="pattern-title">The Architecture</h4>
+              <p class="pattern-desc">How the Orchestrator coordinates everything</p>
+            </div>
+          </div>
+
+          <p style="margin-top: var(--space-8);">This knowledge will help you <strong>make better decisions</strong> when building AI-powered tools, <strong>debug problems faster</strong>, and <strong>understand when to use multi-agent patterns</strong> in your own projects.</p>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- Module 2: Meet the Three Agents -->
+  <section class="module" id="module-2" style="background: var(--color-bg-warm)">
+    <div class="module-content">
+      <header class="module-header animate-in">
+        <span class="module-number">02</span>
+        <h1 class="module-title">Meet the Three Agents</h1>
+        <p class="module-subtitle">The specialized AI workers that make Gladius work</p>
+      </header>
+
+      <div class="module-body">
+        <!-- Screen 1: Agent Roles -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Three Roles, One Goal</h2>
+          <p>Think of Gladius as a tiny software team where each member has one job and does it really well. They don't step on each other's toes — they collaborate by passing information forward.</p>
+
+          <div class="pattern-cards">
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+              <div class="pattern-icon" style="background: var(--color-actor-1)">📋</div>
+              <h4 class="pattern-title">Planner Agent</h4>
+              <p class="pattern-desc"><strong>The Architect.</strong> Reads your request, figures out what needs to change, and creates a detailed plan with steps, files to modify, and risks to watch for.</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+              <div class="pattern-icon" style="background: var(--color-actor-2)">💻</div>
+              <h4 class="pattern-title">Implementer Agent</h4>
+              <p class="pattern-desc"><strong>The Builder.</strong> Takes the plan and writes the actual code — new functions, modified files, tests. Outputs everything as a <span class="term" data-definition="A unified diff is a standardized format showing what changed in a file — lines removed (marked with -) and lines added (marked with +), used by tools like git">unified diff patch</span> you can apply.</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+              <div class="pattern-icon" style="background: var(--color-actor-3)">👁️</div>
+              <h4 class="pattern-title">Reviewer Agent</h4>
+              <p class="pattern-desc"><strong>The Quality Guard.</strong> Checks the implementation for bugs, security issues, and bad patterns. Approves good code or sends it back with specific feedback for revision.</p>
+            </div>
+          </div>
+
+          <div class="callout callout-info">
+            <div class="callout-icon">💬</div>
+            <div class="callout-content">
+              <strong class="callout-title">Why Three Agents?</strong>
+              <p>Separating planning, implementation, and review mirrors how real engineering teams work. It's also how you'd instruct an AI assistant — "first make a plan, then code it, then check your work." Gladius automates that whole conversation.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 2: Group Chat Animation -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Watch Them Coordinate</h2>
+          <p>Here's how the agents talk to each other when processing the request: <strong>"Add user authentication"</strong></p>
+
+          <div class="chat-window">
+            <div class="chat-messages" id="chat-module2">
+              <div class="chat-message" data-msg="0" data-sender="planner" style="display:none">
+                <div class="chat-avatar" style="background: var(--color-actor-1)">P</div>
+                <div class="chat-bubble">
+                  <span class="chat-sender" style="color: var(--color-actor-1)">Planner</span>
+                  <p>Got the ticket. I'll break this down: we need JWT tokens, a login endpoint, middleware to check tokens, and tests.</p>
+                </div>
+              </div>
+
+              <div class="chat-message" data-msg="1" data-sender="planner" style="display:none">
+                <div class="chat-avatar" style="background: var(--color-actor-1)">P</div>
+                <div class="chat-bubble">
+                  <span class="chat-sender" style="color: var(--color-actor-1)">Planner</span>
+                  <p>Files to change: auth.py (new), middleware.py (modify), routes.py (add login endpoint), test_auth.py (new). Here's the full plan.</p>
+                </div>
+              </div>
+
+              <div class="chat-message" data-msg="2" data-sender="implementer" style="display:none">
+                <div class="chat-avatar" style="background: var(--color-actor-2)">I</div>
+                <div class="chat-bubble">
+                  <span class="chat-sender" style="color: var(--color-actor-2)">Implementer</span>
+                  <p>Plan received. Writing the code now... using PyJWT for tokens, adding password hashing with bcrypt, creating the middleware decorator.</p>
+                </div>
+              </div>
+
+              <div class="chat-message" data-msg="3" data-sender="implementer" style="display:none">
+                <div class="chat-avatar" style="background: var(--color-actor-2)">I</div>
+                <div class="chat-bubble">
+                  <span class="chat-sender" style="color: var(--color-actor-2)">Implementer</span>
+                  <p>Done! Code changes ready. Added 4 files, modified 2, created 12 tests. Here's the patch.</p>
+                </div>
+              </div>
+
+              <div class="chat-message" data-msg="4" data-sender="reviewer" style="display:none">
+                <div class="chat-avatar" style="background: var(--color-actor-3)">R</div>
+                <div class="chat-bubble">
+                  <span class="chat-sender" style="color: var(--color-actor-3)">Reviewer</span>
+                  <p>Reviewing the implementation... checking for security issues, testing edge cases, validating error handling.</p>
+                </div>
+              </div>
+
+              <div class="chat-message" data-msg="5" data-sender="reviewer" style="display:none">
+                <div class="chat-avatar" style="background: var(--color-actor-3)">R</div>
+                <div class="chat-bubble">
+                  <span class="chat-sender" style="color: var(--color-actor-3)">Reviewer</span>
+                  <p>Found one issue: the JWT secret is hardcoded. Should use an environment variable. Otherwise looks good — sending feedback for revision.</p>
+                </div>
+              </div>
+
+              <div class="chat-message" data-msg="6" data-sender="implementer" style="display:none">
+                <div class="chat-avatar" style="background: var(--color-actor-2)">I</div>
+                <div class="chat-bubble">
+                  <span class="chat-sender" style="color: var(--color-actor-2)">Implementer</span>
+                  <p>Feedback received. Fixed — now reading JWT secret from environment. Updated the code.</p>
+                </div>
+              </div>
+
+              <div class="chat-message" data-msg="7" data-sender="reviewer" style="display:none">
+                <div class="chat-avatar" style="background: var(--color-actor-3)">R</div>
+                <div class="chat-bubble">
+                  <span class="chat-sender" style="color: var(--color-actor-3)">Reviewer</span>
+                  <p>Perfect! Security issue resolved. Approving the implementation. ✅</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="chat-typing" id="chat-module2-typing" style="display:none">
+              <div class="chat-avatar" id="chat-module2-typing-avatar">?</div>
+              <div class="chat-typing-dots">
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+              </div>
+            </div>
+
+            <div class="chat-controls">
+              <button onclick="playChatModule2Next()">Next Message</button>
+              <button onclick="playChatModule2All()">Play All</button>
+              <button onclick="resetChatModule2()">Replay</button>
+              <span class="chat-progress" id="chat-module2-progress">0 / 8 messages</span>
+            </div>
+          </div>
+
+          <p>Notice how each agent only speaks when it's their turn. They don't interrupt each other or share a workspace — they just pass their results forward as <span class="term" data-definition="Structured data means information organized in a consistent format — like filling out a form with specific fields rather than writing a free-form essay">structured data</span>.</p>
+        </section>
+
+        <!-- Screen 3: Under the Hood - Agent Structure -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">How Agents Are Built</h2>
+          <p>Every agent follows the same pattern. Here's the Planner agent's structure:</p>
+
+          <div class="translation-block">
+            <div class="translation-code">
+              <span class="translation-label">CODE</span>
+              <pre><code><span class="code-keyword">class</span> <span class="code-function">PlannerAgent</span>:
+    <span class="code-keyword">def</span> <span class="code-function">execute</span>(<span class="code-keyword">self</span>, context):
+        <span class="code-comment"># Build the message for Claude</span>
+        message = <span class="code-keyword">self</span>.<span class="code-function">build_user_message</span>(context)
+
+        <span class="code-comment"># Invoke Claude CLI with JSON schema</span>
+        result = claude_client.<span class="code-function">invoke</span>(
+            message,
+            json_schema=<span class="code-function">PlannerOutput</span>.<span class="code-function">schema</span>()
+        )
+
+        <span class="code-comment"># Validate and return</span>
+        <span class="code-keyword">return</span> <span class="code-function">PlannerOutput</span>(**result)</code></pre>
+            </div>
+            <div class="translation-english">
+              <span class="translation-label">PLAIN ENGLISH</span>
+              <div class="translation-lines">
+                <p class="tl">Define the agent class with an execute method that takes context data...</p>
+                <p class="tl">Construct a detailed prompt with the ticket info and any additional context...</p>
+                <p class="tl">Call Claude (the AI model) via the CLI, giving it a JSON schema that defines exactly what fields the response should have...</p>
+                <p class="tl">Take Claude's JSON response and validate it against our schema to make sure it has all the required fields (summary, plan, files to change, etc.).</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout callout-accent">
+            <div class="callout-icon">💡</div>
+            <div class="callout-content">
+              <strong class="callout-title">Key Insight</strong>
+              <p>The <span class="term" data-definition="A schema is a blueprint that defines what structure data should have — like a template that says 'this field is text, that field is a number, this one is required'">JSON schema</span> is critical. It tells Claude exactly what format to return, so Gladius can reliably parse the response. Without it, Claude might write an essay instead of structured data.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 4: Why This Pattern Works -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Why This Pattern Works</h2>
+          <p>Splitting work across three agents has real benefits:</p>
+
+          <div class="icon-rows">
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-success)">✓</div>
+              <div>
+                <strong>Better Quality</strong>
+                <p>Reviewer catches mistakes that Implementer makes — like a second pair of eyes</p>
+              </div>
+            </div>
+
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-success)">✓</div>
+              <div>
+                <strong>Easier to Debug</strong>
+                <p>If something goes wrong, you know which agent to fix. Bad plan? Fix Planner. Bad code? Fix Implementer.</p>
+              </div>
+            </div>
+
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-success)">✓</div>
+              <div>
+                <strong>Extensible Design</strong>
+                <p>Want to add a "Tester" agent or "Documentation" agent? Just plug them into the pipeline.</p>
+              </div>
+            </div>
+
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-success)">✓</div>
+              <div>
+                <strong>Mirrors Real Teams</strong>
+                <p>Architects, developers, and code reviewers — this structure reflects how human teams already work</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- Module 3: How Agents Talk -->
+  <section class="module" id="module-3" style="background: var(--color-bg)">
+    <div class="module-content">
+      <header class="module-header animate-in">
+        <span class="module-number">03</span>
+        <h1 class="module-title">How Agents Talk</h1>
+        <p class="module-subtitle">Stateless communication through structured messages</p>
+      </header>
+
+      <div class="module-body">
+        <!-- Screen 1: The Postal System Metaphor -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Like a Postal System</h2>
+          <p>Imagine a postal service where each worker operates independently — the mail sorter doesn't peek into the delivery driver's truck, and the delivery driver doesn't know what's sitting on the sorter's desk. They only communicate by passing sealed packages with clear labels.</p>
+
+          <p>That's how Gladius agents work. Each agent is <span class="term" data-definition="Stateless means the agent doesn't remember anything from previous runs — each time it starts fresh with only the information you give it, like a function that only knows its parameters">stateless</span> — they don't remember past conversations or share a workspace. They only know what's in the message they receive.</p>
+
+          <div class="icon-rows" style="margin-top: var(--space-8);">
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-info)">📦</div>
+              <div>
+                <strong>Each message is complete</strong>
+                <p>Planner gets the ticket. Implementer gets the ticket AND the plan. Reviewer gets ticket + plan + code.</p>
+              </div>
+            </div>
+
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-info)">🔄</div>
+              <div>
+                <strong>No shared memory</strong>
+                <p>Agents don't access each other's variables or state — only the JSON messages passed between them</p>
+              </div>
+            </div>
+
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-info)">✨</div>
+              <div>
+                <strong>Fresh start every time</strong>
+                <p>Each agent invocation is a new <span class="term" data-definition="A subprocess is a separate running instance of a program — like opening a new calculator window, completely independent from other instances">subprocess</span>. No lingering bugs from previous runs.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 2: The Message Format -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">What's in a Message?</h2>
+          <p>Every message between agents is <span class="term" data-definition="JSON (JavaScript Object Notation) is a text format for structured data — think of it as a digital form with labeled fields that both humans and computers can easily read">JSON</span> — structured data with labeled fields. Here's what Implementer receives:</p>
+
+          <div class="translation-block">
+            <div class="translation-code">
+              <span class="translation-label">JSON MESSAGE</span>
+              <pre><code>{
+  <span class="code-property">"ticket"</span>: {
+    <span class="code-property">"key"</span>: <span class="code-string">"PROJ-123"</span>,
+    <span class="code-property">"title"</span>: <span class="code-string">"Add authentication"</span>,
+    <span class="code-property">"description"</span>: <span class="code-string">"..."</span>
+  },
+  <span class="code-property">"plan"</span>: {
+    <span class="code-property">"summary"</span>: <span class="code-string">"Add JWT auth..."</span>,
+    <span class="code-property">"plan"</span>: [
+      <span class="code-string">"Create auth.py"</span>,
+      <span class="code-string">"Add middleware"</span>,
+      <span class="code-string">"Write tests"</span>
+    ],
+    <span class="code-property">"files_to_change"</span>: [...]
+  },
+  <span class="code-property">"project_path"</span>: <span class="code-string">"/my/project"</span>
+}</code></pre>
+            </div>
+            <div class="translation-english">
+              <span class="translation-label">WHAT IT MEANS</span>
+              <div class="translation-lines">
+                <p class="tl">The original user request, converted into structured ticket data with a unique ID...</p>
+                <p class="tl">The plan that Planner created — summary, step-by-step instructions, and which files need changes...</p>
+                <p class="tl">Where the codebase lives, so Implementer knows which project to work on.</p>
+              </div>
+            </div>
+          </div>
+
+          <p>This complete message is everything Implementer needs. It doesn't need to ask Planner questions or look at Planner's internal state — it's all here.</p>
+        </section>
+
+        <!-- Screen 3: Why Stateless? -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Why Build It Stateless?</h2>
+          <p>Making agents stateless might seem like extra work — why not let them share memory? Here's why it's worth it:</p>
+
+          <div class="pattern-cards">
+            <div class="pattern-card" style="border-top: 3px solid var(--color-success)">
+              <div class="pattern-icon" style="background: var(--color-success)">🛡️</div>
+              <h4 class="pattern-title">Isolation</h4>
+              <p class="pattern-desc">If Reviewer crashes, it doesn't corrupt Planner or Implementer's state. Each agent fails independently.</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid var(--color-success)">
+              <div class="pattern-icon" style="background: var(--color-success)">🔁</div>
+              <h4 class="pattern-title">Retryable</h4>
+              <p class="pattern-desc">If an agent fails, you can retry it with the exact same input. No "it worked last time" mysteries.</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid var(--color-success)">
+              <div class="pattern-icon" style="background: var(--color-success)">📝</div>
+              <h4 class="pattern-title">Auditable</h4>
+              <p class="pattern-desc">Every message is saved as JSON. You can replay the entire pipeline by reading the saved messages.</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid var(--color-success)">
+              <div class="pattern-icon" style="background: var(--color-success)">⚖️</div>
+              <h4 class="pattern-title">Parallelizable</h4>
+              <p class="pattern-desc">No shared state means agents could run in parallel (if the workflow allowed it) without stepping on each other.</p>
+            </div>
+          </div>
+
+          <div class="callout callout-accent">
+            <div class="callout-icon">💡</div>
+            <div class="callout-content">
+              <strong class="callout-title">Key Insight</strong>
+              <p>Stateless design is a trade-off. You send more data with each message (because each agent gets a complete context), but you gain reliability and simplicity. It's the same principle behind <span class="term" data-definition="REST (Representational State Transfer) is an API design style where each request contains all the information needed — the server doesn't remember previous requests, making it more reliable and scalable">REST APIs</span> and <span class="term" data-definition="Functional programming is a style where functions don't modify external state — they only transform their inputs into outputs, making code easier to test and reason about">functional programming</span> — avoid hidden state, make data flow explicit.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 4: Code - Building the Message -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Building the Context Message</h2>
+          <p>Here's how the Orchestrator prepares the message for Implementer:</p>
+
+          <div class="translation-block">
+            <div class="translation-code">
+              <span class="translation-label">CODE</span>
+              <pre><code><span class="code-keyword">def</span> <span class="code-function">_run_implementer</span>(
+    <span class="code-keyword">self</span>, ticket_data, plan_output,
+    review_output, iteration, model, project_path
+):
+    context = {
+        <span class="code-string">"ticket"</span>: ticket_data,
+        <span class="code-string">"plan"</span>: plan_output,
+        <span class="code-string">"model"</span>: model,
+        <span class="code-string">"iteration"</span>: iteration,
+        <span class="code-string">"project_path"</span>: <span class="code-function">str</span>(project_path)
+    }
+
+    <span class="code-comment"># Add review feedback if revision</span>
+    <span class="code-keyword">if</span> review_output:
+        context[<span class="code-string">"review_feedback"</span>] = {
+            <span class="code-string">"issues"</span>: review_output.issues,
+            <span class="code-string">"suggested_changes"</span>: review_output.suggested_changes
+        }
+
+    <span class="code-keyword">return</span> implementer.<span class="code-function">execute</span>(context)</code></pre>
+            </div>
+            <div class="translation-english">
+              <span class="translation-label">PLAIN ENGLISH</span>
+              <div class="translation-lines">
+                <p class="tl">Create a dictionary (like a labeled box) with everything Implementer needs: the ticket, the plan, which AI model to use, which attempt this is, and where the code lives...</p>
+                <p class="tl">If this is a revision (Reviewer sent it back), add the review feedback — what issues were found and what changes were suggested...</p>
+                <p class="tl">Call Implementer's execute method with this complete context. Implementer starts fresh, knowing only what's in this message.</p>
+              </div>
+            </div>
+          </div>
+
+          <p>Notice: the Orchestrator doesn't tell Implementer "remember what you did last time." It explicitly includes the review feedback in the message. Everything is in the data, nothing is in shared memory.</p>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- Module 4: The Claude CLI Worker -->
+  <section class="module" id="module-4" style="background: var(--color-bg-warm)">
+    <div class="module-content">
+      <header class="module-header animate-in">
+        <span class="module-number">04</span>
+        <h1 class="module-title">The Claude CLI Worker</h1>
+        <p class="module-subtitle">How Gladius talks to the AI model</p>
+      </header>
+
+      <div class="module-body">
+        <!-- Screen 1: The Factory Floor Metaphor -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">The Assembly Line</h2>
+          <p>Think of the <span class="term" data-definition="Claude CLI is a command-line tool for interacting with Claude (Anthropic's AI model) from the terminal — like running a program from the command prompt">Claude CLI</span> as a specialized machine on a factory floor. You feed it raw materials (a prompt and a <span class="term" data-definition="A JSON schema defines what structure the JSON response should have — which fields are required, what types they should be (text, number, etc.), like a blueprint for data">JSON schema</span>), press the button (run the command), wait while it works, and receive a finished product (structured JSON output).</p>
+
+          <p>Gladius doesn't use the Claude API directly. Instead, it invokes the Claude CLI as a <span class="term" data-definition="A subprocess is a separate program that runs independently — like opening Calculator from within Word, the calculator runs separately but Word started it">subprocess</span> — a separate program that runs, does its job, and returns a result.</p>
+
+          <div class="step-cards">
+            <div class="step-card">
+              <div class="step-num">1</div>
+              <div class="step-body">
+                <strong>Build the command</strong>
+                <p>Construct a shell command with flags: <code>claude --print --model sonnet --json-schema {...}</code></p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-num">2</div>
+              <div class="step-body">
+                <strong>Run the subprocess</strong>
+                <p>Execute the command, showing a spinner while Claude thinks (can take 30-120 seconds)</p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-num">3</div>
+              <div class="step-body">
+                <strong>Capture the output</strong>
+                <p>Read the text that Claude prints to <span class="term" data-definition="stdout (standard output) is where programs print their normal output — like the text you see in the terminal after running a command">stdout</span></p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-num">4</div>
+              <div class="step-body">
+                <strong>Parse the JSON</strong>
+                <p>Extract the structured data from Claude's response, handling wrapper formats and markdown</p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-num">5</div>
+              <div class="step-body">
+                <strong>Validate the schema</strong>
+                <p>Check that the JSON has all required fields using <span class="term" data-definition="Pydantic is a Python library for data validation — you define what structure your data should have, and Pydantic checks incoming data matches that structure">Pydantic</span></p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 2: The Invocation Code -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Invoking the CLI</h2>
+          <p>Here's the core function that calls Claude:</p>
+
+          <div class="translation-block">
+            <div class="translation-code">
+              <span class="translation-label">CODE</span>
+              <pre><code><span class="code-keyword">def</span> <span class="code-function">invoke</span>(<span class="code-keyword">self</span>, user_message, system_prompt,
+         json_schema, model=<span class="code-string">"sonnet"</span>):
+    cmd = [
+        <span class="code-keyword">self</span>.claude_path,
+        <span class="code-string">'--print'</span>,
+        <span class="code-string">'--no-session-persistence'</span>,
+        <span class="code-string">'--model'</span>, model,
+        <span class="code-string">'--output-format'</span>, <span class="code-string">'json'</span>,
+        <span class="code-string">'--json-schema'</span>, json.<span class="code-function">dumps</span>(json_schema),
+        user_message
+    ]
+
+    result = subprocess.<span class="code-function">run</span>(
+        cmd,
+        stdout=subprocess.PIPE,
+        text=<span class="code-keyword">True</span>,
+        timeout=<span class="code-keyword">self</span>.timeout
+    )
+
+    <span class="code-keyword">return</span> <span class="code-keyword">self</span>.<span class="code-function">_parse_json_output</span>(result.stdout)</code></pre>
+            </div>
+            <div class="translation-english">
+              <span class="translation-label">PLAIN ENGLISH</span>
+              <div class="translation-lines">
+                <p class="tl">Build a command as a list of arguments: the path to Claude, flags to control its behavior, the AI model to use, and importantly the JSON schema that defines what structure the response should have...</p>
+                <p class="tl">Run the command as a subprocess, capturing its text output (stdout), with a timeout to prevent hanging forever...</p>
+                <p class="tl">Take the raw text output and parse it into structured JSON data we can work with.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout callout-info">
+            <div class="callout-icon">🔍</div>
+            <div class="callout-content">
+              <strong class="callout-title">Why the CLI Instead of the API?</strong>
+              <p>The Claude CLI handles authentication, retries, and rate limiting automatically. It also integrates with <span class="term" data-definition="MCP (Model Context Protocol) lets AI models access external data sources like databases, APIs, or file systems — think of it as giving Claude the ability to look things up instead of only knowing what's in its training data">MCP</span> (Model Context Protocol) for accessing external data. Using the CLI means less code to maintain and better integration with the Claude ecosystem.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 3: The Parsing Challenge -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Parsing JSON (The Hard Part)</h2>
+          <p>You'd think "Claude outputs JSON" means it's easy to parse. Not quite. Claude sometimes wraps the JSON in different formats:</p>
+
+          <div class="pattern-cards">
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+              <div class="pattern-icon" style="background: var(--color-actor-5)">1️⃣</div>
+              <h4 class="pattern-title">Direct JSON</h4>
+              <p class="pattern-desc">Best case: <code>{"summary": "..."}</code> — clean, parseable JSON</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+              <div class="pattern-icon" style="background: var(--color-actor-5)">2️⃣</div>
+              <h4 class="pattern-title">Markdown Wrapper</h4>
+              <p class="pattern-desc"><code>```json\n{"summary": "..."}\n```</code> — need to extract from code block</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+              <div class="pattern-icon" style="background: var(--color-actor-5)">3️⃣</div>
+              <h4 class="pattern-title">CLI Wrapper</h4>
+              <p class="pattern-desc"><code>{"type": "result", "structured_output": {"summary": "..."}}</code> — nested structure</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+              <div class="pattern-icon" style="background: var(--color-actor-5)">4️⃣</div>
+              <h4 class="pattern-title">Mixed Content</h4>
+              <p class="pattern-desc">Text before/after JSON — need to extract just the JSON part</p>
+            </div>
+          </div>
+
+          <p>Gladius handles all these formats with a multi-strategy parser that tries each approach until one works.</p>
+        </section>
+
+        <!-- Screen 4: The Parsing Strategy -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Multi-Strategy Parsing</h2>
+          <p>Here's the parsing logic that handles all those formats:</p>
+
+          <div class="translation-block">
+            <div class="translation-code">
+              <span class="translation-label">CODE</span>
+              <pre><code><span class="code-keyword">def</span> <span class="code-function">_parse_json_output</span>(<span class="code-keyword">self</span>, output):
+    <span class="code-comment"># Try direct parsing first</span>
+    <span class="code-keyword">try</span>:
+        parsed = json.<span class="code-function">loads</span>(output)
+        <span class="code-keyword">if</span> <span class="code-string">"structured_output"</span> <span class="code-keyword">in</span> parsed:
+            <span class="code-keyword">return</span> parsed[<span class="code-string">"structured_output"</span>]
+        <span class="code-keyword">return</span> parsed
+    <span class="code-keyword">except</span>:
+        <span class="code-keyword">pass</span>
+
+    <span class="code-comment"># Try extracting from markdown</span>
+    match = re.<span class="code-function">search</span>(
+        <span class="code-string">r'```(?:json)?\s*(\{.*?\})\s*```'</span>,
+        output,
+        re.DOTALL
+    )
+    <span class="code-keyword">if</span> match:
+        <span class="code-keyword">return</span> json.<span class="code-function">loads</span>(match.<span class="code-function">group</span>(<span class="code-number">1</span>))
+
+    <span class="code-comment"># Find any JSON object in the text</span>
+    matches = re.<span class="code-function">findall</span>(
+        <span class="code-string">r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'</span>,
+        output
+    )
+    <span class="code-keyword">for</span> m <span class="code-keyword">in</span> matches:
+        <span class="code-keyword">try</span>:
+            <span class="code-keyword">return</span> json.<span class="code-function">loads</span>(m)
+        <span class="code-keyword">except</span>:
+            <span class="code-keyword">continue</span>
+
+    <span class="code-keyword">raise</span> <span class="code-function">JSONDecodeError</span>(<span class="code-string">"No valid JSON found"</span>)</code></pre>
+            </div>
+            <div class="translation-english">
+              <span class="translation-label">PLAIN ENGLISH</span>
+              <div class="translation-lines">
+                <p class="tl">Strategy 1: Try parsing the entire output as JSON. If it's wrapped in a CLI structure, extract the "structured_output" field. This handles the clean cases...</p>
+                <p class="tl">Strategy 2: Look for JSON inside markdown code blocks (the triple backticks). Use a <span class="term" data-definition="A regular expression (regex) is a pattern for finding text — like a search with wildcards, used to extract or validate specific text formats">regex</span> pattern to extract it...</p>
+                <p class="tl">Strategy 3: Search the entire text for anything that looks like a JSON object (starts with { and ends with }). Try parsing each match until one works...</p>
+                <p class="tl">If all strategies fail, raise an error — we couldn't find valid JSON anywhere.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout callout-accent">
+            <div class="callout-icon">💡</div>
+            <div class="callout-content">
+              <strong class="callout-title">Key Insight</strong>
+              <p>This multi-strategy parsing is defensive programming. Instead of assuming Claude will always return perfect JSON, we handle the reality that LLMs sometimes wrap their output in unexpected ways. The cost is a few extra parsing attempts; the benefit is reliability in production.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 5: Quiz -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Test Your Understanding</h2>
+          <p>Let's see if you understand how the Claude CLI integration works:</p>
+
+          <div class="quiz-container">
+            <div class="quiz-question-block" data-question="q1" data-correct="option-b">
+              <h3 class="quiz-question">Why does Gladius use the Claude CLI instead of calling the API directly?</h3>
+              <div class="quiz-options">
+                <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>The CLI is faster than the API</span>
+                </button>
+                <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>The CLI handles authentication, retries, and MCP integration automatically</span>
+                </button>
+                <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>The API doesn't support JSON output</span>
+                </button>
+              </div>
+              <div class="quiz-feedback" id="q1-feedback"></div>
+            </div>
+
+            <div class="quiz-question-block" data-question="q2" data-correct="option-c">
+              <h3 class="quiz-question">What does the <code>--json-schema</code> flag do?</h3>
+              <div class="quiz-options">
+                <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>It makes Claude output JSON instead of text</span>
+                </button>
+                <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>It validates JSON after Claude returns it</span>
+                </button>
+                <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>It tells Claude exactly what fields and structure the JSON should have</span>
+                </button>
+              </div>
+              <div class="quiz-feedback" id="q2-feedback"></div>
+            </div>
+
+            <div class="quiz-question-block" data-question="q3" data-correct="option-b">
+              <h3 class="quiz-question">Why does the parser try multiple strategies instead of just <code>json.loads(output)</code>?</h3>
+              <div class="quiz-options">
+                <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>To make the code more complex and impressive</span>
+                </button>
+                <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>Claude sometimes wraps JSON in markdown or CLI wrappers, so we need fallback strategies</span>
+                </button>
+                <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>The first strategy is always wrong</span>
+                </button>
+              </div>
+              <div class="quiz-feedback" id="q3-feedback"></div>
+            </div>
+
+            <button class="quiz-check-btn" onclick="checkQuizModule4()">Check Answers</button>
+            <button class="quiz-reset-btn" onclick="resetQuizModule4()">Try Again</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- Module 5: The Review Loop -->
+  <section class="module" id="module-5" style="background: var(--color-bg)">
+    <div class="module-content">
+      <header class="module-header animate-in">
+        <span class="module-number">05</span>
+        <h1 class="module-title">The Review Loop</h1>
+        <p class="module-subtitle">How Reviewer improves code through feedback iterations</p>
+      </header>
+
+      <div class="module-body">
+        <!-- Screen 1: The Editing Process Metaphor -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Like Editing a Draft</h2>
+          <p>Imagine writing an essay. You write a first draft, then your editor reads it and marks it up: "This argument needs support," "This section is unclear," "Great insight here, expand it." You revise based on the feedback, and the editor reads it again. If it's good, they approve it. If not, another round.</p>
+
+          <p>That's exactly how Gladius's review loop works. Implementer writes code, Reviewer evaluates it, and if there are issues, Implementer gets specific feedback for a revision.</p>
+
+          <div class="icon-rows" style="margin-top: var(--space-8);">
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-actor-3)">🔍</div>
+              <div>
+                <strong>Reviewer checks for issues</strong>
+                <p>Security bugs, incorrect logic, missing error handling — categorized as critical, major, or minor</p>
+              </div>
+            </div>
+
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-actor-3)">✅</div>
+              <div>
+                <strong>Two possible verdicts</strong>
+                <p><strong>APPROVE:</strong> Code is good, ship it. <strong>REQUEST_CHANGES:</strong> Fix these issues first.</p>
+              </div>
+            </div>
+
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-actor-2)">🔄</div>
+              <div>
+                <strong>Implementer revises</strong>
+                <p>Gets the feedback, understands what needs fixing, rewrites the code addressing the issues</p>
+              </div>
+            </div>
+
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-accent)">🛑</div>
+              <div>
+                <strong>Maximum iterations</strong>
+                <p>The loop runs up to 2-3 times by default, then stops even if not perfect (prevents infinite loops)</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 2: The Iteration Pattern -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">The Iteration Pattern in Code</h2>
+          <p>Here's how the Orchestrator manages the review loop:</p>
+
+          <div class="translation-block">
+            <div class="translation-code">
+              <span class="translation-label">CODE</span>
+              <pre><code>approved = <span class="code-keyword">False</span>
+iteration = <span class="code-number">1</span>
+review_output = <span class="code-keyword">None</span>
+
+<span class="code-keyword">while</span> iteration &lt;= max_iterations <span class="code-keyword">and not</span> approved:
+    <span class="code-comment"># Implementer creates/revises code</span>
+    impl = implementer.<span class="code-function">execute</span>(
+        ticket, plan, review_output
+    )
+
+    <span class="code-comment"># Reviewer evaluates the code</span>
+    review = reviewer.<span class="code-function">execute</span>(
+        ticket, plan, impl
+    )
+
+    <span class="code-comment"># Check the verdict</span>
+    <span class="code-keyword">if</span> review.verdict == <span class="code-string">"APPROVE"</span>:
+        approved = <span class="code-keyword">True</span>
+    <span class="code-keyword">else</span>:
+        review_output = review  <span class="code-comment"># Pass to next iteration</span>
+        iteration += <span class="code-number">1</span>
+
+<span class="code-keyword">return</span> approved, impl, review</code></pre>
+            </div>
+            <div class="translation-english">
+              <span class="translation-label">PLAIN ENGLISH</span>
+              <div class="translation-lines">
+                <p class="tl">Start with "not approved" and iteration 1, with no review feedback yet...</p>
+                <p class="tl">Keep looping as long as we haven't hit the max attempts AND the code isn't approved yet...</p>
+                <p class="tl">Implementer writes/revises code. On iteration 1, this is the first draft. On later iterations, Implementer gets the previous review feedback...</p>
+                <p class="tl">Reviewer evaluates the implementation, checking for bugs, security issues, and quality problems...</p>
+                <p class="tl">If Reviewer approves, we're done! Break out of the loop. If not, save the review feedback and increment the counter for the next round...</p>
+                <p class="tl">Return whether it was approved, the final code, and the final review.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout callout-accent">
+            <div class="callout-icon">💡</div>
+            <div class="callout-content">
+              <strong class="callout-title">Key Insight</strong>
+              <p>This is a bounded loop with an exit condition. Without <code>max_iterations</code>, you could get stuck forever if Implementer and Reviewer disagree. The limit ensures the pipeline always completes, even if the code isn't perfect.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 3: What Reviewer Checks -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">What Reviewer Looks For</h2>
+          <p>Reviewer categorizes issues by severity to help Orchestrator decide whether to iterate:</p>
+
+          <div class="pattern-cards">
+            <div class="pattern-card" style="border-top: 3px solid var(--color-error)">
+              <div class="pattern-icon" style="background: var(--color-error)">🚨</div>
+              <h4 class="pattern-title">Critical</h4>
+              <p class="pattern-desc"><strong>Blocking.</strong> Security vulnerabilities, data loss risks, broken functionality. Must be fixed.</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid #E89A3C">
+              <div class="pattern-icon" style="background: #E89A3C">⚠️</div>
+              <h4 class="pattern-title">Major</h4>
+              <p class="pattern-desc"><strong>Important.</strong> Missing error handling, poor architecture, significant bugs. Should be fixed.</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid var(--color-info)">
+              <div class="pattern-icon" style="background: var(--color-info)">ℹ️</div>
+              <h4 class="pattern-title">Minor</h4>
+              <p class="pattern-desc"><strong>Nice-to-have.</strong> Code style issues, small optimizations, documentation gaps. Can ship without fixing.</p>
+            </div>
+          </div>
+
+          <p>Reviewer typically requests changes only if there are <strong>critical</strong> or <strong>major</strong> issues. Minor issues get noted but don't block approval.</p>
+        </section>
+
+        <!-- Screen 4: The Feedback Message -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">What Feedback Looks Like</h2>
+          <p>When Reviewer requests changes, it sends structured feedback that Implementer can act on:</p>
+
+          <div class="translation-block">
+            <div class="translation-code">
+              <span class="translation-label">JSON FEEDBACK</span>
+              <pre><code>{
+  <span class="code-property">"verdict"</span>: <span class="code-string">"REQUEST_CHANGES"</span>,
+  <span class="code-property">"summary"</span>: <span class="code-string">"One critical security issue"</span>,
+  <span class="code-property">"issues"</span>: [
+    {
+      <span class="code-property">"severity"</span>: <span class="code-string">"critical"</span>,
+      <span class="code-property">"category"</span>: <span class="code-string">"security"</span>,
+      <span class="code-property">"description"</span>: <span class="code-string">"JWT secret hardcoded"</span>,
+      <span class="code-property">"location"</span>: <span class="code-string">"auth.py:15"</span>,
+      <span class="code-property">"recommendation"</span>: <span class="code-string">"Read from env var"</span>
+    }
+  ],
+  <span class="code-property">"suggested_changes"</span>: [
+    <span class="code-string">"Use os.environ['JWT_SECRET']"</span>,
+    <span class="code-string">"Add .env file with secret"</span>,
+    <span class="code-string">"Document env vars in README"</span>
+  ]
+}</code></pre>
+            </div>
+            <div class="translation-english">
+              <span class="translation-label">WHAT IT MEANS</span>
+              <div class="translation-lines">
+                <p class="tl">The verdict is "needs work" — Implementer must revise...</p>
+                <p class="tl">A quick summary of what's wrong...</p>
+                <p class="tl">Each issue includes: how serious it is, what category (security, correctness, etc.), a description, where in the code it appears, and what to do about it...</p>
+                <p class="tl">Concrete suggestions for fixing the issues — actionable steps Implementer can follow.</p>
+              </div>
+            </div>
+          </div>
+
+          <p>On the next iteration, Implementer receives this feedback as part of its context and addresses each issue in the revision.</p>
+        </section>
+
+        <!-- Screen 5: Quiz -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Check Your Understanding</h2>
+
+          <div class="quiz-container">
+            <div class="quiz-question-block" data-question="q1" data-correct="option-b">
+              <h3 class="quiz-question">Why does the review loop have a <code>max_iterations</code> limit?</h3>
+              <div class="quiz-options">
+                <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>To save money on API costs</span>
+                </button>
+                <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>To prevent infinite loops if Implementer and Reviewer never agree</span>
+                </button>
+                <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>Because the first iteration is always perfect</span>
+                </button>
+              </div>
+              <div class="quiz-feedback" id="q1-m5-feedback"></div>
+            </div>
+
+            <div class="quiz-question-block" data-question="q2" data-correct="option-c">
+              <h3 class="quiz-question">Which severity level would <em>not</em> typically cause Reviewer to request changes?</h3>
+              <div class="quiz-options">
+                <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>Critical (security vulnerabilities, data loss)</span>
+                </button>
+                <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>Major (missing error handling, significant bugs)</span>
+                </button>
+                <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>Minor (code style issues, small optimizations)</span>
+                </button>
+              </div>
+              <div class="quiz-feedback" id="q2-m5-feedback"></div>
+            </div>
+
+            <div class="quiz-question-block" data-question="q3" data-correct="option-b">
+              <h3 class="quiz-question">How does Implementer know what to fix on iteration 2?</h3>
+              <div class="quiz-options">
+                <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>It remembers what it did wrong from last time (shared memory)</span>
+                </button>
+                <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>Orchestrator includes the review feedback in the context message</span>
+                </button>
+                <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                  <div class="quiz-option-radio"></div>
+                  <span>Reviewer directly modifies Implementer's code</span>
+                </button>
+              </div>
+              <div class="quiz-feedback" id="q3-m5-feedback"></div>
+            </div>
+
+            <button class="quiz-check-btn" onclick="checkQuizModule5()">Check Answers</button>
+            <button class="quiz-reset-btn" onclick="resetQuizModule5()">Try Again</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- Module 6: The Orchestrator -->
+  <section class="module" id="module-6" style="background: var(--color-bg-warm)">
+    <div class="module-content">
+      <header class="module-header animate-in">
+        <span class="module-number">06</span>
+        <h1 class="module-title">The Orchestrator</h1>
+        <p class="module-subtitle">The conductor that coordinates the entire pipeline</p>
+      </header>
+
+      <div class="module-body">
+        <!-- Screen 1: The Air Traffic Controller Metaphor -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">The Air Traffic Controller</h2>
+          <p>Imagine an air traffic controller at a busy airport. They don't fly the planes — pilots do that. But the controller coordinates everything: which plane lands first, where it taxis, when it takes off. They track each plane's status, handle delays, and ensure nothing crashes.</p>
+
+          <p>That's the <span class="term" data-definition="An orchestrator is a component that coordinates multiple other components — it doesn't do the work itself, but manages the workflow, timing, and data passing between workers">Orchestrator</span> in Gladius. It doesn't write code or create plans — the agents do that. But it manages the entire workflow:</p>
+
+          <div class="icon-rows" style="margin-top: var(--space-8);">
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-actor-4)">1️⃣</div>
+              <div>
+                <strong>Fetches the ticket</strong>
+                <p>Gets your request from <span class="term" data-definition="MCP (Model Context Protocol) lets AI models access external data sources — in Gladius, it's used to fetch ticket data from Jira or convert natural language into tickets">MCP</span> or converts your natural language into a ticket</p>
+              </div>
+            </div>
+
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-actor-4)">2️⃣</div>
+              <div>
+                <strong>Runs agents in sequence</strong>
+                <p>Calls Planner → Implementer → Reviewer in order, passing outputs as inputs</p>
+              </div>
+            </div>
+
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-actor-4)">3️⃣</div>
+              <div>
+                <strong>Manages the review loop</strong>
+                <p>Handles iterations between Implementer and Reviewer until approval or max attempts</p>
+              </div>
+            </div>
+
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-actor-4)">4️⃣</div>
+              <div>
+                <strong>Saves artifacts</strong>
+                <p>Writes all outputs (ticket, plan, code, review) to disk with timestamps for auditing</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 2: The Main Pipeline Flow -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">The Pipeline Flow</h2>
+          <p>Here's the core orchestration logic:</p>
+
+          <div class="translation-block">
+            <div class="translation-code">
+              <span class="translation-label">CODE</span>
+              <pre><code><span class="code-keyword">def</span> <span class="code-function">run_pipeline</span>(<span class="code-keyword">self</span>, request, model, project_path):
+    <span class="code-comment"># Phase 1: Fetch ticket</span>
+    ticket_data = mcp_client.<span class="code-function">get_ticket</span>(request)
+    run_dir = artifact_manager.<span class="code-function">create_run</span>(ticket_data[<span class="code-string">"key"</span>])
+
+    <span class="code-comment"># Phase 2: Planning</span>
+    plan = planner.<span class="code-function">execute</span>({
+        <span class="code-string">"ticket"</span>: ticket_data,
+        <span class="code-string">"project_path"</span>: project_path
+    })
+    artifact_manager.<span class="code-function">save_planner_output</span>(plan)
+
+    <span class="code-comment"># Phase 3: Implementation + Review loop</span>
+    approved = <span class="code-keyword">False</span>
+    iteration = <span class="code-number">1</span>
+    review = <span class="code-keyword">None</span>
+
+    <span class="code-keyword">while</span> iteration &lt;= max_iterations <span class="code-keyword">and not</span> approved:
+        impl = implementer.<span class="code-function">execute</span>({
+            <span class="code-string">"ticket"</span>: ticket_data,
+            <span class="code-string">"plan"</span>: plan,
+            <span class="code-string">"review_feedback"</span>: review
+        })
+        artifact_manager.<span class="code-function">save_implementer_output</span>(impl, iteration)
+
+        review = reviewer.<span class="code-function">execute</span>({
+            <span class="code-string">"ticket"</span>: ticket_data,
+            <span class="code-string">"plan"</span>: plan,
+            <span class="code-string">"implementation"</span>: impl
+        })
+        artifact_manager.<span class="code-function">save_reviewer_output</span>(review, iteration)
+
+        approved = (review.verdict == <span class="code-string">"APPROVE"</span>)
+        iteration += <span class="code-number">1</span>
+
+    <span class="code-comment"># Phase 4: Create summary</span>
+    summary = <span class="code-keyword">self</span>.<span class="code-function">_create_summary</span>(ticket_data, plan, impl, review)
+    artifact_manager.<span class="code-function">save_run_summary</span>(summary)
+
+    <span class="code-keyword">return</span> summary</code></pre>
+            </div>
+            <div class="translation-english">
+              <span class="translation-label">PLAIN ENGLISH</span>
+              <div class="translation-lines">
+                <p class="tl">Get the ticket data and create a timestamped run directory where all outputs will be saved...</p>
+                <p class="tl">Run Planner with the ticket and project path. Save its output (the plan) to disk...</p>
+                <p class="tl">Enter the implementation/review loop. Start at iteration 1 with no review feedback...</p>
+                <p class="tl">Keep looping: Implementer writes code (using review feedback if available), save the code, Reviewer evaluates it, save the review. If approved, stop. Otherwise, increment the counter and loop again...</p>
+                <p class="tl">When the loop exits, create a summary with metrics (duration, files changed, issues found, approval status) and save it...</p>
+                <p class="tl">Return the summary to the user.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout callout-accent">
+            <div class="callout-icon">💡</div>
+            <div class="callout-content">
+              <strong class="callout-title">Key Insight</strong>
+              <p>The Orchestrator is the only component that understands the full workflow. Each agent only knows its own job. This separation means you can change the pipeline (add agents, reorder steps, change loop logic) without touching agent code.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 3: Artifact Management -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Saving Artifacts</h2>
+          <p>Every run creates a complete audit trail on disk:</p>
+
+          <div class="translation-block">
+            <div class="translation-code">
+              <span class="translation-label">FILE STRUCTURE</span>
+              <pre><code>runs/PROJ-123_20260330_143052/
+├── ticket.json
+├── planner/
+│   └── plan.json
+├── implementer/
+│   ├── implementation_v1.json
+│   └── implementation_v2.json
+├── reviewer/
+│   ├── review_v1.json
+│   └── review_v2.json
+├── patches/
+│   ├── changes_v1.patch
+│   └── changes_v2.patch
+└── summary.json</code></pre>
+            </div>
+            <div class="translation-english">
+              <span class="translation-label">WHY EACH FILE EXISTS</span>
+              <div class="translation-lines">
+                <p class="tl">The original ticket data — what the user requested...</p>
+                <p class="tl">Planner's output — the implementation plan...</p>
+                <p class="tl">Each iteration's code changes. v1 is the first try, v2 is the revision after review feedback...</p>
+                <p class="tl">Each review's verdict and issues. Reviewer checks v1, then checks v2 if changes were requested...</p>
+                <p class="tl">Git-compatible patch files you can apply to your codebase with <code>git apply</code>...</p>
+                <p class="tl">Summary of the entire run — duration, success/failure, metrics.</p>
+              </div>
+            </div>
+          </div>
+
+          <p>This structure means you can replay the entire pipeline by reading these files. It's also invaluable for debugging — if something went wrong, you know exactly what each agent saw and produced.</p>
+        </section>
+
+        <!-- Screen 4: Quiz -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Scenario Challenge</h2>
+          <p>You're building a similar multi-agent system. Apply what you learned:</p>
+
+          <div class="quiz-container">
+            <div class="scenario-block">
+              <div class="scenario-context" style="background: var(--color-info-light); padding: var(--space-4); border-radius: var(--radius-md); border-left: 3px solid var(--color-info); margin-bottom: var(--space-4);">
+                <span style="font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-info); font-weight: 600;">Scenario</span>
+                <p style="margin-top: var(--space-2); margin-bottom: 0;">You're adding a fourth agent (Tester) that runs tests on Implementer's code. Where does this logic belong?</p>
+              </div>
+
+              <div class="quiz-question-block" data-question="q1" data-correct="option-b">
+                <div class="quiz-options">
+                  <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                    <div class="quiz-option-radio"></div>
+                    <span>Inside Implementer — it should run tests on its own code</span>
+                  </button>
+                  <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                    <div class="quiz-option-radio"></div>
+                    <span>In the Orchestrator — add another agent to the pipeline sequence</span>
+                  </button>
+                  <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                    <div class="quiz-option-radio"></div>
+                    <span>Inside Reviewer — it already checks code quality</span>
+                  </button>
+                </div>
+                <div class="quiz-feedback" id="q1-m6-feedback"></div>
+              </div>
+            </div>
+
+            <div class="scenario-block">
+              <div class="scenario-context" style="background: var(--color-info-light); padding: var(--space-4); border-radius: var(--radius-md); border-left: 3px solid var(--color-info); margin-bottom: var(--space-4);">
+                <span style="font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-info); font-weight: 600;">Scenario</span>
+                <p style="margin-top: var(--space-2); margin-bottom: 0;">A user reports that a pipeline failed, but they don't know which agent caused the problem. Where do you look first?</p>
+              </div>
+
+              <div class="quiz-question-block" data-question="q2" data-correct="option-c">
+                <div class="quiz-options">
+                  <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                    <div class="quiz-option-radio"></div>
+                    <span>Check the agent's internal logs (they're stored in memory)</span>
+                  </button>
+                  <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                    <div class="quiz-option-radio"></div>
+                    <span>Re-run the pipeline and watch for errors</span>
+                  </button>
+                  <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                    <div class="quiz-option-radio"></div>
+                    <span>Check the run directory — the saved artifacts show exactly what each agent produced</span>
+                  </button>
+                </div>
+                <div class="quiz-feedback" id="q2-m6-feedback"></div>
+              </div>
+            </div>
+
+            <button class="quiz-check-btn" onclick="checkQuizModule6()">Check Answers</button>
+            <button class="quiz-reset-btn" onclick="resetQuizModule6()">Try Again</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- Module 7: The Big Picture -->
+  <section class="module" id="module-7" style="background: var(--color-bg)">
+    <div class="module-content">
+      <header class="module-header animate-in">
+        <span class="module-number">07</span>
+        <h1 class="module-title">The Big Picture</h1>
+        <p class="module-subtitle">Connecting Gladius to real-world patterns and your future projects</p>
+      </header>
+
+      <div class="module-body">
+        <!-- Screen 1: What You've Learned -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">You Now Understand</h2>
+          <p>You've seen how Gladius turns a natural language request into working code through a coordinated multi-agent system. Let's connect these ideas to the broader software world:</p>
+
+          <div class="pattern-cards">
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+              <div class="pattern-icon" style="background: var(--color-actor-1)">🏗️</div>
+              <h4 class="pattern-title">Pipeline Architecture</h4>
+              <p class="pattern-desc">Sequential stages where each step transforms data and passes it forward — used in CI/CD, data processing, and build systems</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+              <div class="pattern-icon" style="background: var(--color-actor-2)">🔄</div>
+              <h4 class="pattern-title">Stateless Design</h4>
+              <p class="pattern-desc">Components that don't remember previous runs — makes systems more reliable and easier to scale (REST APIs, serverless functions)</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+              <div class="pattern-icon" style="background: var(--color-actor-3)">💬</div>
+              <h4 class="pattern-title">Message Passing</h4>
+              <p class="pattern-desc">Explicit data flow instead of shared memory — the foundation of <span class="term" data-definition="Microservices are small, independent services that communicate via messages/APIs — like having specialized restaurants instead of one giant kitchen">microservices</span> and distributed systems</p>
+            </div>
+
+            <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+              <div class="pattern-icon" style="background: var(--color-actor-4)">🎯</div>
+              <h4 class="pattern-title">Separation of Concerns</h4>
+              <p class="pattern-desc">Each component has one clear job — easier to understand, test, and modify (the Unix philosophy: "do one thing well")</p>
+            </div>
+          </div>
+
+          <div class="callout callout-info">
+            <div class="callout-icon">🌍</div>
+            <div class="callout-content">
+              <strong class="callout-title">These Patterns Are Everywhere</strong>
+              <p>Gladius isn't unique — it applies established software patterns to AI agents. Understanding these patterns helps you recognize them in other systems and use them in your own projects.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 2: When to Use Multi-Agent Systems -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">When to Build Multi-Agent Systems</h2>
+          <p>Not every problem needs multiple agents. Here's when it makes sense:</p>
+
+          <div class="icon-rows" style="margin-top: var(--space-8);">
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-success)">✓</div>
+              <div>
+                <strong>The task has distinct phases</strong>
+                <p>Planning → Execution → Review. If you'd naturally say "first do X, then do Y, then check Z," that's a pipeline.</p>
+              </div>
+            </div>
+
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-success)">✓</div>
+              <div>
+                <strong>Specialists improve quality</strong>
+                <p>A "Reviewer" agent catches mistakes an "Implementer" misses. Specialization adds value.</p>
+              </div>
+            </div>
+
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-success)">✓</div>
+              <div>
+                <strong>You need auditability</strong>
+                <p>Saving each agent's output creates a paper trail. Great for debugging and compliance.</p>
+              </div>
+            </div>
+
+            <div class="icon-row">
+              <div class="icon-circle" style="background: var(--color-error)">✗</div>
+              <div>
+                <strong>When NOT to use it</strong>
+                <p>Simple tasks where one AI call would work. Over-engineering a solution adds complexity without benefit.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 3: What You Can Build -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Ideas for Your Own Projects</h2>
+          <p>Now that you understand the pattern, here are systems you could build:</p>
+
+          <div class="step-cards">
+            <div class="step-card">
+              <div class="step-num">💼</div>
+              <div class="step-body">
+                <strong>Document Generator</strong>
+                <p><strong>Researcher</strong> gathers information → <strong>Writer</strong> drafts content → <strong>Editor</strong> polishes and fact-checks</p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-num">📧</div>
+              <div class="step-body">
+                <strong>Email Assistant</strong>
+                <p><strong>Classifier</strong> categorizes emails → <strong>Responder</strong> drafts replies → <strong>Tone Checker</strong> ensures professionalism</p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-num">🎨</div>
+              <div class="step-body">
+                <strong>Design System</strong>
+                <p><strong>Sketcher</strong> creates initial layout → <strong>Designer</strong> adds styling → <strong>Accessibility Checker</strong> validates compliance</p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-num">🔍</div>
+              <div class="step-body">
+                <strong>Research Pipeline</strong>
+                <p><strong>Searcher</strong> finds sources → <strong>Summarizer</strong> extracts key points → <strong>Synthesizer</strong> combines into insights</p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-num">📊</div>
+              <div class="step-body">
+                <strong>Data Analysis</strong>
+                <p><strong>Cleaner</strong> fixes data quality → <strong>Analyzer</strong> finds patterns → <strong>Explainer</strong> translates findings to plain English</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 4: Key Principles to Remember -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Principles for Steering AI</h2>
+          <p>Whether you're using Gladius or building your own AI tools, these principles will help you get better results:</p>
+
+          <div class="callout callout-accent">
+            <div class="callout-icon">1️⃣</div>
+            <div class="callout-content">
+              <strong class="callout-title">Be Specific About Structure</strong>
+              <p>Don't just ask for "a plan." Ask for "a JSON object with a summary, a list of steps, and files to change." <span class="term" data-definition="Structured output means the AI returns data in a predictable format (like JSON with specific fields) instead of free-form text — makes it much easier to process programmatically">Structured outputs</span> make AI responses usable, not just readable.</p>
+            </div>
+          </div>
+
+          <div class="callout callout-accent">
+            <div class="callout-icon">2️⃣</div>
+            <div class="callout-content">
+              <strong class="callout-title">Design for Failure</strong>
+              <p>AI isn't perfect. Build in retries (Gladius tries 3 times), validation (check the JSON schema), and bounded loops (max iterations). Expect things to go wrong and handle it gracefully.</p>
+            </div>
+          </div>
+
+          <div class="callout callout-accent">
+            <div class="callout-icon">3️⃣</div>
+            <div class="callout-content">
+              <strong class="callout-title">Make Data Flow Explicit</strong>
+              <p>Avoid "the AI remembers context." Pass complete messages. If Implementer needs the plan, send it explicitly. This makes debugging trivial — you can see exactly what each agent received.</p>
+            </div>
+          </div>
+
+          <div class="callout callout-accent">
+            <div class="callout-icon">4️⃣</div>
+            <div class="callout-content">
+              <strong class="callout-title">Start Simple, Add Agents As Needed</strong>
+              <p>Don't build a 5-agent system on day one. Start with one AI call. If quality suffers, add a Reviewer. If planning is weak, add a Planner. Let real problems drive the architecture.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen 5: Final Quiz -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">Final Challenge</h2>
+          <p>Let's see how you'd apply these patterns:</p>
+
+          <div class="quiz-container">
+            <div class="scenario-block">
+              <div class="scenario-context" style="background: var(--color-info-light); padding: var(--space-4); border-radius: var(--radius-md); border-left: 3px solid var(--color-info); margin-bottom: var(--space-4);">
+                <span style="font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-info); font-weight: 600;">Scenario</span>
+                <p style="margin-top: var(--space-2); margin-bottom: 0;">You're building an AI writing assistant. The first version is a single prompt: "Write a blog post about X." It works, but the quality is inconsistent — sometimes great, sometimes rambling or off-topic. What would you do?</p>
+              </div>
+
+              <div class="quiz-question-block" data-question="q1" data-correct="option-b">
+                <div class="quiz-options">
+                  <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                    <div class="quiz-option-radio"></div>
+                    <span>Switch to a better AI model</span>
+                  </button>
+                  <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                    <div class="quiz-option-radio"></div>
+                    <span>Add an "Editor" agent that reviews and revises the draft</span>
+                  </button>
+                  <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                    <div class="quiz-option-radio"></div>
+                    <span>Make the prompt longer and more detailed</span>
+                  </button>
+                </div>
+                <div class="quiz-feedback" id="q1-m7-feedback"></div>
+              </div>
+            </div>
+
+            <div class="scenario-block">
+              <div class="scenario-context" style="background: var(--color-info-light); padding: var(--space-4); border-radius: var(--radius-md); border-left: 3px solid var(--color-info); margin-bottom: var(--space-4);">
+                <span style="font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-info); font-weight: 600;">Scenario</span>
+                <p style="margin-top: var(--space-2); margin-bottom: 0;">Your multi-agent pipeline occasionally fails, but it's hard to debug because you can't see what each agent received or produced. What's the fix?</p>
+              </div>
+
+              <div class="quiz-question-block" data-question="q2" data-correct="option-c">
+                <div class="quiz-options">
+                  <button class="quiz-option" data-value="option-a" onclick="selectOption(this)">
+                    <div class="quiz-option-radio"></div>
+                    <span>Add more agents to catch errors</span>
+                  </button>
+                  <button class="quiz-option" data-value="option-b" onclick="selectOption(this)">
+                    <div class="quiz-option-radio"></div>
+                    <span>Reduce the complexity by removing agents</span>
+                  </button>
+                  <button class="quiz-option" data-value="option-c" onclick="selectOption(this)">
+                    <div class="quiz-option-radio"></div>
+                    <span>Save each agent's input and output to disk (like Gladius's artifact manager)</span>
+                  </button>
+                </div>
+                <div class="quiz-feedback" id="q2-m7-feedback"></div>
+              </div>
+            </div>
+
+            <button class="quiz-check-btn" onclick="checkQuizModule7()">Check Answers</button>
+            <button class="quiz-reset-btn" onclick="resetQuizModule7()">Try Again</button>
+          </div>
+        </section>
+
+        <!-- Screen 6: Conclusion -->
+        <section class="screen animate-in">
+          <h2 class="screen-heading">You're Ready</h2>
+          <p>You now understand how Gladius works — not just "what it does," but <strong>how the pieces fit together</strong> and <strong>why they're designed that way</strong>.</p>
+
+          <p>This knowledge transfers beyond Gladius:</p>
+          <ul style="margin-left: var(--space-6); margin-top: var(--space-4); line-height: var(--leading-loose);">
+            <li>You can <strong>make better decisions</strong> when asking AI coding tools to build features</li>
+            <li>You can <strong>debug issues faster</strong> by understanding where in the pipeline things go wrong</li>
+            <li>You can <strong>design your own multi-agent systems</strong> using these patterns</li>
+            <li>You can <strong>evaluate AI tools</strong> by understanding their architecture</li>
+          </ul>
+
+          <p style="margin-top: var(--space-8);">The future of software development isn't writing every line by hand — it's <strong>directing AI systems to do it for you</strong>. You now have the vocabulary and mental models to do that effectively.</p>
+
+          <div style="text-align: center; margin-top: var(--space-12); padding: var(--space-8); background: var(--color-accent-light); border-radius: var(--radius-lg);">
+            <p style="font-size: var(--text-2xl); font-family: var(--font-display); font-weight: 600; margin-bottom: var(--space-2);">🎉 Course Complete!</p>
+            <p style="color: var(--color-text-secondary); margin: 0;">Go build something amazing.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // ==================== GLOBAL JAVASCRIPT ====================
+    (function() {
+      'use strict';
+
+      // Progress bar
+      const progressBar = document.querySelector('.progress-bar');
+      function updateProgressBar() {
+        const scrollTop = window.scrollY;
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = (scrollTop / scrollHeight) * 100;
+        progressBar.style.width = progress + '%';
+      }
+      window.addEventListener('scroll', () => {
+        requestAnimationFrame(updateProgressBar);
+      }, { passive: true });
+
+      // Navigation dots
+      const navDots = document.querySelectorAll('.nav-dot');
+      const modules = document.querySelectorAll('.module');
+
+      navDots.forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+          modules[index].scrollIntoView({ behavior: 'smooth' });
+        });
+      });
+
+      // Update active dot on scroll
+      const observerOptions = {
+        root: null,
+        rootMargin: '-50% 0px -50% 0px',
+        threshold: 0
+      };
+
+      const moduleObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const index = Array.from(modules).indexOf(entry.target);
+            navDots.forEach((dot, i) => {
+              dot.classList.remove('active');
+              if (i < index) {
+                dot.classList.add('visited');
+              }
+              if (i === index) {
+                dot.classList.add('active');
+              }
+            });
+          }
+        });
+      }, observerOptions);
+
+      modules.forEach(module => moduleObserver.observe(module));
+
+      // Keyboard navigation
+      document.addEventListener('keydown', (e) => {
+        if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+        const currentIndex = Array.from(modules).findIndex(m => {
+          const rect = m.getBoundingClientRect();
+          return rect.top >= -100 && rect.top <= 100;
+        });
+
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+          e.preventDefault();
+          const nextIndex = Math.min(currentIndex + 1, modules.length - 1);
+          modules[nextIndex].scrollIntoView({ behavior: 'smooth' });
+        }
+
+        if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          const prevIndex = Math.max(currentIndex - 1, 0);
+          modules[prevIndex].scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+
+      // Scroll-triggered animations
+      const animObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            animObserver.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.1 });
+
+      document.querySelectorAll('.animate-in').forEach(el => animObserver.observe(el));
+
+      // Stagger animation setup
+      document.querySelectorAll('.stagger-children').forEach(parent => {
+        Array.from(parent.children).forEach((child, i) => {
+          child.style.setProperty('--stagger-index', i);
+        });
+      });
+
+      // Glossary tooltips
+      let activeTooltip = null;
+
+      function positionTooltip(term, tip) {
+        const rect = term.getBoundingClientRect();
+        const tipWidth = 300;
+        let left = rect.left + rect.width / 2 - tipWidth / 2;
+        left = Math.max(8, Math.min(left, window.innerWidth - tipWidth - 8));
+
+        document.body.appendChild(tip);
+        const tipHeight = tip.offsetHeight;
+
+        if (rect.top - tipHeight - 8 < 0) {
+          tip.style.top = (rect.bottom + 8) + 'px';
+          tip.classList.add('flip');
+        } else {
+          tip.style.top = (rect.top - tipHeight - 8) + 'px';
+          tip.classList.remove('flip');
+        }
+
+        tip.style.left = left + 'px';
+      }
+
+      document.querySelectorAll('.term').forEach(term => {
+        const tip = document.createElement('span');
+        tip.className = 'term-tooltip';
+        tip.textContent = term.dataset.definition;
+
+        term.addEventListener('mouseenter', () => {
+          if (activeTooltip && activeTooltip !== tip) {
+            activeTooltip.classList.remove('visible');
+            activeTooltip.remove();
+          }
+          positionTooltip(term, tip);
+          requestAnimationFrame(() => tip.classList.add('visible'));
+          activeTooltip = tip;
+        });
+
+        term.addEventListener('mouseleave', () => {
+          tip.classList.remove('visible');
+          setTimeout(() => { if (!tip.classList.contains('visible')) tip.remove(); }, 150);
+          activeTooltip = null;
+        });
+
+        term.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (activeTooltip && activeTooltip !== tip) {
+            activeTooltip.classList.remove('visible');
+            activeTooltip.remove();
+          }
+          if (tip.classList.contains('visible')) {
+            tip.classList.remove('visible');
+            tip.remove();
+            activeTooltip = null;
+          } else {
+            positionTooltip(term, tip);
+            requestAnimationFrame(() => tip.classList.add('visible'));
+            activeTooltip = tip;
+          }
+        });
+      });
+
+      document.addEventListener('click', () => {
+        if (activeTooltip) {
+          activeTooltip.classList.remove('visible');
+          activeTooltip.remove();
+          activeTooltip = null;
+        }
+      });
+
+      // ==================== CHAT ANIMATION (Module 2) ====================
+      const actorColors = {
+        'planner': 'var(--color-actor-1)',
+        'implementer': 'var(--color-actor-2)',
+        'reviewer': 'var(--color-actor-3)'
+      };
+
+      const actorInitials = {
+        'planner': 'P',
+        'implementer': 'I',
+        'reviewer': 'R'
+      };
+
+      let chatModule2Index = 0;
+      const chatModule2Messages = document.querySelectorAll('#chat-module2 .chat-message');
+      const chatModule2Typing = document.getElementById('chat-module2-typing');
+      const chatModule2TypingAvatar = document.getElementById('chat-module2-typing-avatar');
+      const chatModule2Progress = document.getElementById('chat-module2-progress');
+
+      window.playChatModule2Next = function() {
+        if (chatModule2Index >= chatModule2Messages.length) return;
+
+        const msg = chatModule2Messages[chatModule2Index];
+        const sender = msg.dataset.sender;
+
+        // Show typing indicator
+        chatModule2TypingAvatar.textContent = actorInitials[sender];
+        chatModule2TypingAvatar.style.background = actorColors[sender];
+        chatModule2Typing.style.display = 'flex';
+
+        setTimeout(() => {
+          chatModule2Typing.style.display = 'none';
+          msg.style.display = 'flex';
+          msg.style.animation = 'fadeSlideUp 0.3s var(--ease-out)';
+          chatModule2Index++;
+          chatModule2Progress.textContent = `${chatModule2Index} / ${chatModule2Messages.length} messages`;
+
+          // Auto-scroll to bottom
+          const container = document.getElementById('chat-module2');
+          container.scrollTop = container.scrollHeight;
+        }, 800);
+      };
+
+      window.playChatModule2All = function() {
+        const interval = setInterval(() => {
+          if (chatModule2Index >= chatModule2Messages.length) {
+            clearInterval(interval);
+            return;
+          }
+          window.playChatModule2Next();
+        }, 1200);
+      };
+
+      window.resetChatModule2 = function() {
+        chatModule2Index = 0;
+        chatModule2Messages.forEach(msg => msg.style.display = 'none');
+        chatModule2Typing.style.display = 'none';
+        chatModule2Progress.textContent = '0 / ' + chatModule2Messages.length + ' messages';
+      };
+
+      // ==================== QUIZ FUNCTIONS ====================
+      window.selectOption = function(btn) {
+        const block = btn.closest('.quiz-question-block');
+        block.querySelectorAll('.quiz-option').forEach(o => o.classList.remove('selected'));
+        btn.classList.add('selected');
+      };
+
+      const quizExplanations = {
+        'module7': {
+          'q1': {
+            correct: 'Perfect! You\'ve identified the Gladius pattern — when quality is inconsistent, add a specialist agent that reviews and improves. An Editor agent gives you the review loop benefit without changing the Writer.',
+            incorrect: 'While better models or prompts might help a bit, they don\'t solve the core issue: there\'s no feedback loop. An Editor agent (like Gladius\'s Reviewer) can catch issues and request revisions, dramatically improving consistency.'
+          },
+          'q2': {
+            correct: 'Exactly! This is the artifact management pattern from Gladius. Save every input and output. When something fails, you know exactly what each agent saw and produced. Debugging becomes trivial.',
+            incorrect: 'More or fewer agents won\'t help if you can\'t see what\'s happening. The solution is visibility — save each agent\'s input and output to disk (like Gladius does). Then debugging is just reading files instead of guessing.'
+          }
+        },
+        'module6': {
+          'q1': {
+            correct: 'Exactly! The Orchestrator owns the workflow. Agents should stay focused on their single responsibility. Adding Tester means adding another step in the Orchestrator\'s pipeline, not complicating existing agents.',
+            incorrect: 'Agents should have single responsibilities. Implementer writes code, Reviewer evaluates it — neither should also run tests. The Orchestrator coordinates the workflow, so that\'s where you add new pipeline steps.'
+          },
+          'q2': {
+            correct: 'Perfect! The run directory contains the complete history — every agent\'s input and output. You can see exactly where it failed without guessing or re-running.',
+            incorrect: 'Agents are stateless — they don\'t keep logs in memory. The run directory is your source of truth. It has every agent\'s input and output, making it trivial to diagnose exactly where things went wrong.'
+          }
+        },
+        'module5': {
+          'q1': {
+            correct: 'Exactly! Without a limit, the loop could run forever if the agents keep disagreeing. The limit ensures the pipeline completes, trading perfect code for guaranteed termination.',
+            incorrect: 'The limit isn\'t about cost. It\'s a safety mechanism — if Implementer and Reviewer can\'t converge on approval, the loop needs to stop eventually rather than running forever.'
+          },
+          'q2': {
+            correct: 'Right! Minor issues (style, small optimizations, docs) are noted but don\'t block approval. Only critical and major issues trigger REQUEST_CHANGES.',
+            incorrect: 'Not quite. Critical and major issues are serious enough to block approval. Minor issues like code style or small optimizations can be fixed later — they don\'t justify another full iteration.'
+          },
+          'q3': {
+            correct: 'Correct! The review feedback (issues and suggested changes) is added to the context object that Implementer receives. Remember: agents are stateless, so everything must be in the message.',
+            incorrect: 'Remember: agents are stateless and don\'t share memory. Implementer doesn\'t "remember" anything. The Orchestrator explicitly includes the review feedback in the context message for iteration 2.'
+          }
+        },
+        'module4': {
+          'q1': {
+            correct: 'Exactly! The CLI abstracts away authentication complexity, handles retries automatically, and integrates with MCP for accessing external data sources. This means less code to maintain.',
+            incorrect: 'Not quite. The CLI isn\'t necessarily faster, but it handles a lot of infrastructure concerns (auth, retries, MCP) that you\'d otherwise have to implement yourself when using the API directly.'
+          },
+          'q2': {
+            correct: 'Correct! The schema is like a blueprint that tells Claude "your response must have these fields with these types." This makes Claude\'s output predictable and parseable.',
+            incorrect: 'Close, but the schema does more than just enable or validate JSON. It tells Claude exactly what structure to use — which fields are required, what types they should be, etc.'
+          },
+          'q3': {
+            correct: 'Exactly! Real-world LLM outputs aren\'t always perfectly formatted. The multi-strategy parser handles Claude wrapping JSON in markdown blocks, CLI response objects, or mixed content.',
+            incorrect: 'The multiple strategies exist because Claude\'s output format can vary. Sometimes it\'s clean JSON, sometimes it\'s wrapped in markdown or CLI structures. The parser needs to handle all these cases reliably.'
+          }
+        }
+      };
+
+      window.checkQuizModule4 = function() {
+        const container = document.querySelector('#module-4 .quiz-container');
+        const questions = container.querySelectorAll('.quiz-question-block');
+        let correct = 0;
+
+        questions.forEach(q => {
+          const selected = q.querySelector('.quiz-option.selected');
+          const feedback = q.querySelector('.quiz-feedback');
+          const correctValue = q.dataset.correct;
+          const qId = q.dataset.question;
+
+          if (!selected) {
+            feedback.textContent = 'Pick an answer first!';
+            feedback.className = 'quiz-feedback show';
+            return;
+          }
+
+          if (selected.dataset.value === correctValue) {
+            correct++;
+            selected.classList.add('correct');
+            feedback.innerHTML = '<strong>✓</strong> ' + quizExplanations.module4[qId].correct;
+            feedback.className = 'quiz-feedback show success';
+          } else {
+            selected.classList.add('incorrect');
+            q.querySelector(`[data-value="${correctValue}"]`).classList.add('correct');
+            feedback.innerHTML = '<strong>✗</strong> ' + quizExplanations.module4[qId].incorrect;
+            feedback.className = 'quiz-feedback show error';
+          }
+
+          q.querySelectorAll('.quiz-option').forEach(o => o.disabled = true);
+        });
+      };
+
+      window.resetQuizModule4 = function() {
+        const container = document.querySelector('#module-4 .quiz-container');
+        container.querySelectorAll('.quiz-option').forEach(o => {
+          o.classList.remove('selected', 'correct', 'incorrect');
+          o.disabled = false;
+        });
+        container.querySelectorAll('.quiz-feedback').forEach(f => {
+          f.className = 'quiz-feedback';
+          f.textContent = '';
+        });
+      };
+
+      window.checkQuizModule5 = function() {
+        const container = document.querySelector('#module-5 .quiz-container');
+        const questions = container.querySelectorAll('.quiz-question-block');
+
+        questions.forEach(q => {
+          const selected = q.querySelector('.quiz-option.selected');
+          const feedback = q.querySelector('.quiz-feedback');
+          const correctValue = q.dataset.correct;
+          const qId = q.dataset.question;
+
+          if (!selected) {
+            feedback.textContent = 'Pick an answer first!';
+            feedback.className = 'quiz-feedback show';
+            return;
+          }
+
+          if (selected.dataset.value === correctValue) {
+            selected.classList.add('correct');
+            feedback.innerHTML = '<strong>✓</strong> ' + quizExplanations.module5[qId].correct;
+            feedback.className = 'quiz-feedback show success';
+          } else {
+            selected.classList.add('incorrect');
+            q.querySelector(`[data-value="${correctValue}"]`).classList.add('correct');
+            feedback.innerHTML = '<strong>✗</strong> ' + quizExplanations.module5[qId].incorrect;
+            feedback.className = 'quiz-feedback show error';
+          }
+
+          q.querySelectorAll('.quiz-option').forEach(o => o.disabled = true);
+        });
+      };
+
+      window.resetQuizModule5 = function() {
+        const container = document.querySelector('#module-5 .quiz-container');
+        container.querySelectorAll('.quiz-option').forEach(o => {
+          o.classList.remove('selected', 'correct', 'incorrect');
+          o.disabled = false;
+        });
+        container.querySelectorAll('.quiz-feedback').forEach(f => {
+          f.className = 'quiz-feedback';
+          f.textContent = '';
+        });
+      };
+
+      window.checkQuizModule6 = function() {
+        const container = document.querySelector('#module-6 .quiz-container');
+        const questions = container.querySelectorAll('.quiz-question-block');
+
+        questions.forEach(q => {
+          const selected = q.querySelector('.quiz-option.selected');
+          const feedback = q.querySelector('.quiz-feedback');
+          const correctValue = q.dataset.correct;
+          const qId = q.dataset.question;
+
+          if (!selected) {
+            feedback.textContent = 'Pick an answer first!';
+            feedback.className = 'quiz-feedback show';
+            return;
+          }
+
+          if (selected.dataset.value === correctValue) {
+            selected.classList.add('correct');
+            feedback.innerHTML = '<strong>✓</strong> ' + quizExplanations.module6[qId].correct;
+            feedback.className = 'quiz-feedback show success';
+          } else {
+            selected.classList.add('incorrect');
+            q.querySelector(`[data-value="${correctValue}"]`).classList.add('correct');
+            feedback.innerHTML = '<strong>✗</strong> ' + quizExplanations.module6[qId].incorrect;
+            feedback.className = 'quiz-feedback show error';
+          }
+
+          q.querySelectorAll('.quiz-option').forEach(o => o.disabled = true);
+        });
+      };
+
+      window.resetQuizModule6 = function() {
+        const container = document.querySelector('#module-6 .quiz-container');
+        container.querySelectorAll('.quiz-option').forEach(o => {
+          o.classList.remove('selected', 'correct', 'incorrect');
+          o.disabled = false;
+        });
+        container.querySelectorAll('.quiz-feedback').forEach(f => {
+          f.className = 'quiz-feedback';
+          f.textContent = '';
+        });
+      };
+
+      window.checkQuizModule7 = function() {
+        const container = document.querySelector('#module-7 .quiz-container');
+        const questions = container.querySelectorAll('.quiz-question-block');
+
+        questions.forEach(q => {
+          const selected = q.querySelector('.quiz-option.selected');
+          const feedback = q.querySelector('.quiz-feedback');
+          const correctValue = q.dataset.correct;
+          const qId = q.dataset.question;
+
+          if (!selected) {
+            feedback.textContent = 'Pick an answer first!';
+            feedback.className = 'quiz-feedback show';
+            return;
+          }
+
+          if (selected.dataset.value === correctValue) {
+            selected.classList.add('correct');
+            feedback.innerHTML = '<strong>✓</strong> ' + quizExplanations.module7[qId].correct;
+            feedback.className = 'quiz-feedback show success';
+          } else {
+            selected.classList.add('incorrect');
+            q.querySelector(`[data-value="${correctValue}"]`).classList.add('correct');
+            feedback.innerHTML = '<strong>✗</strong> ' + quizExplanations.module7[qId].incorrect;
+            feedback.className = 'quiz-feedback show error';
+          }
+
+          q.querySelectorAll('.quiz-option').forEach(o => o.disabled = true);
+        });
+      };
+
+      window.resetQuizModule7 = function() {
+        const container = document.querySelector('#module-7 .quiz-container');
+        container.querySelectorAll('.quiz-option').forEach(o => {
+          o.classList.remove('selected', 'correct', 'incorrect');
+          o.disabled = false;
+        });
+        container.querySelectorAll('.quiz-feedback').forEach(f => {
+          f.className = 'quiz-feedback';
+          f.textContent = '';
+        });
+      };
+
+    })();
+  </script>
+
+</body>
+</html>
