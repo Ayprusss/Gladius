@@ -10,6 +10,13 @@ from typing import Dict, Any, Optional
 logger = logging.getLogger(__name__)
 from pathlib import Path
 
+# Regex patterns for extracting JSON from text
+MD_JSON_PATTERN = re.compile(r'```(?:json)?\s*(\{.*?\})\s*```', re.DOTALL)
+JSON_BRACE_PATTERN = re.compile(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', re.DOTALL)
+
+# Keys that indicate a JSON object is one of our target responses
+TARGET_KEYS = {'plan', 'changes', 'verdict', 'issues', 'patch', 'files_to_modify', 'files_to_change'}
+
 
 class ClaudeClient:
     """Wrapper for invoking Claude CLI with JSON output"""
@@ -169,31 +176,29 @@ class ClaudeClient:
         Parse JSON output, handling markdown-wrapped JSON, Claude CLI response wrappers, and AWS SSO preambles
         """
         logger.debug(f"Raw Claude CLI output (first 500 chars):\n{output[:500]}")
-        
-        target_keys = {'plan', 'changes', 'verdict', 'issues', 'patch', 'files_to_modify', 'files_to_change'}
 
         def extract_from_string(s: str) -> Optional[Dict[str, Any]]:
             try:
                 obj = json.loads(s)
-                if isinstance(obj, dict) and any(k in obj for k in target_keys):
+                if isinstance(obj, dict) and any(k in obj for k in TARGET_KEYS):
                     return obj
             except json.JSONDecodeError:
                 pass
             
-            md_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', s, re.DOTALL)
+            md_match = MD_JSON_PATTERN.search(s)
             if md_match:
                 try:
                     obj = json.loads(md_match.group(1))
-                    if isinstance(obj, dict) and any(k in obj for k in target_keys):
+                    if isinstance(obj, dict) and any(k in obj for k in TARGET_KEYS):
                         return obj
                 except json.JSONDecodeError:
                     pass
             
-            matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', s, re.DOTALL)
+            matches = JSON_BRACE_PATTERN.findall(s)
             for m in matches:
                 try:
                     obj = json.loads(m)
-                    if isinstance(obj, dict) and any(k in obj for k in target_keys):
+                    if isinstance(obj, dict) and any(k in obj for k in TARGET_KEYS):
                         return obj
                 except json.JSONDecodeError:
                     continue
@@ -201,7 +206,7 @@ class ClaudeClient:
 
         def search_parsed(obj: Any) -> Optional[Dict[str, Any]]:
             if isinstance(obj, dict):
-                if any(k in obj for k in target_keys):
+                if any(k in obj for k in TARGET_KEYS):
                     return obj
                 for v in obj.values():
                     res = search_parsed(v)
@@ -225,7 +230,7 @@ class ClaudeClient:
         try:
             parsed = json.loads(output)
         except json.JSONDecodeError:
-            matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', output, re.DOTALL)
+            matches = JSON_BRACE_PATTERN.findall(output)
             for m in matches:
                 try:
                     parsed = json.loads(m)
