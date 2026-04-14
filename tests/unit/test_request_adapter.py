@@ -142,6 +142,16 @@ class TestDirectRequestAdapter:
 
         assert ticket["key"].startswith("CUSTOM-")
 
+    def test_synthetic_ticket_id_with_suffix(self):
+        """Test ticket ID with explicit suffix"""
+        adapter = DirectRequestAdapter()
+        ticket = adapter.create_synthetic_ticket("Test", suffix="XYZ")
+
+        assert ticket["key"].startswith("DIRECT-")
+        assert ticket["key"].endswith("-XYZ")
+        # DIRECT-YYYYMMDDHHMMSS-XYZ = 7 + 14 + 1 + 3 = 25
+        assert len(ticket["key"]) == 25
+
     def test_create_tickets_batch(self):
         """Test batch ticket creation"""
         adapter = DirectRequestAdapter()

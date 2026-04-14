@@ -21,7 +21,8 @@ class DirectRequestAdapter:
         self,
         request: str,
         ticket_type: Optional[str] = None,
-        priority: str = "medium"
+        priority: str = "medium",
+        suffix: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Create synthetic ticket from natural request
@@ -33,6 +34,7 @@ class DirectRequestAdapter:
             request: Natural language request
             ticket_type: Override auto-detection (feature, bug, improvement)
             priority: Ticket priority (default: medium)
+            suffix: Optional suffix for the ticket ID to ensure uniqueness
 
         Returns:
             Synthetic ticket in standard format
@@ -55,7 +57,10 @@ class DirectRequestAdapter:
 
         # Generate unique ID with timestamp
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        ticket_id = f"{self.ticket_prefix}-{timestamp}"
+        if suffix:
+            ticket_id = f"{self.ticket_prefix}-{timestamp}-{suffix}"
+        else:
+            ticket_id = f"{self.ticket_prefix}-{timestamp}"
 
         # Auto-detect type if not specified
         if ticket_type is None:
@@ -142,17 +147,15 @@ class DirectRequestAdapter:
             >>> len(tickets)
             2
         """
-        import time
         tickets = []
         for i, request in enumerate(requests):
-            # Add delay to ensure unique timestamps (1 second granularity)
-            if i > 0:
-                time.sleep(1.1)  # Slightly more than 1 second to ensure uniqueness
-
+            # Use index as suffix to ensure uniqueness within the batch
+            # without needing to sleep between requests
             ticket = self.create_synthetic_ticket(
                 request=request,
                 ticket_type=ticket_type,
-                priority=priority
+                priority=priority,
+                suffix=str(i)
             )
             tickets.append(ticket)
 
