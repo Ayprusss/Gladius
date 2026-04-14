@@ -188,15 +188,22 @@ class ClaudeClient:
                         return obj
                 except json.JSONDecodeError:
                     pass
-            
-            matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', s, re.DOTALL)
-            for m in matches:
+
+            # Robust, non-backtracking JSON extraction using JSONDecoder
+            decoder = json.JSONDecoder()
+            start = 0
+            while True:
+                start = s.find('{', start)
+                if start == -1:
+                    break
                 try:
-                    obj = json.loads(m)
+                    obj, index = decoder.raw_decode(s[start:])
                     if isinstance(obj, dict) and any(k in obj for k in target_keys):
                         return obj
+                    start += index
                 except json.JSONDecodeError:
-                    continue
+                    start += 1
+
             return None
 
         def search_parsed(obj: Any) -> Optional[Dict[str, Any]]:
@@ -225,13 +232,17 @@ class ClaudeClient:
         try:
             parsed = json.loads(output)
         except json.JSONDecodeError:
-            matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', output, re.DOTALL)
-            for m in matches:
+            decoder = json.JSONDecoder()
+            start = 0
+            while True:
+                start = output.find('{', start)
+                if start == -1:
+                    break
                 try:
-                    parsed = json.loads(m)
+                    parsed, index = decoder.raw_decode(output[start:])
                     break
                 except json.JSONDecodeError:
-                    continue
+                    start += 1
 
         if parsed is not None:
             # Always prefer natively parsed structured_output from the CLI wrapper

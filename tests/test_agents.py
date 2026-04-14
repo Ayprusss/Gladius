@@ -53,7 +53,7 @@ class TestPlannerAgent:
         message = planner_agent.build_user_message(context)
 
         assert message is not None
-        assert ticket["id"] in message
+        assert ticket["key"] in message
         assert ticket["title"] in message
         assert ticket["description"] in message
 
@@ -137,11 +137,11 @@ class TestImplementerAgent:
     def test_build_user_message_initial(self, implementer_agent):
         """Test user message for initial implementation"""
         ticket = get_authentication_ticket()
-        plan = {
-            "summary": "Add auth",
-            "plan": ["Step 1", "Step 2"],
-            "files_to_change": []
-        }
+        plan = PlannerOutput(
+            summary="Add auth",
+            plan=["Step 1", "Step 2"],
+            files_to_change=[]
+        )
         context = {
             "ticket": ticket,
             "plan": plan,
@@ -151,14 +151,18 @@ class TestImplementerAgent:
         message = implementer_agent.build_user_message(context)
 
         assert message is not None
-        assert ticket["id"] in message
+        assert ticket["key"] in message
         assert "Step 1" in message
         assert "review_feedback" not in message.lower()
 
     def test_build_user_message_with_feedback(self, implementer_agent):
         """Test user message includes review feedback"""
         ticket = get_authentication_ticket()
-        plan = {"summary": "Add auth", "plan": ["Step 1"]}
+        plan = PlannerOutput(
+            summary="Add auth",
+            plan=["Step 1"],
+            files_to_change=[]
+        )
         review_feedback = {
             "verdict": "REQUEST_CHANGES",
             "issues": [
@@ -211,12 +215,17 @@ class TestReviewerAgent:
     def test_build_user_message(self, reviewer_agent):
         """Test user message building"""
         ticket = get_authentication_ticket()
-        plan = {"summary": "Add auth", "plan": ["Step 1"]}
-        implementation = {
-            "changes": [{"file": "auth.py", "type": "create", "description": "Added"}],
-            "patch": "--- diff here ---",
-            "notes": "Implementation notes"
-        }
+        plan = PlannerOutput(
+            summary="Add auth",
+            plan=["Step 1"],
+            files_to_change=[]
+        )
+        implementation = ImplementerOutput(
+            changes=[{"file": "auth.py", "type": "create", "description": "Added"}],
+            patch="--- diff here ---",
+            notes="Implementation notes",
+            tests_added_or_updated=[]
+        )
         context = {
             "ticket": ticket,
             "plan": plan,
@@ -226,7 +235,7 @@ class TestReviewerAgent:
         message = reviewer_agent.build_user_message(context)
 
         assert message is not None
-        assert ticket["id"] in message
+        assert ticket["key"] in message
         assert "auth.py" in message
         assert "--- diff here ---" in message
 
@@ -243,8 +252,8 @@ class TestReviewerAgent:
         ticket = get_authentication_ticket()
         context = {
             "ticket": ticket,
-            "plan": {"summary": "Test"},
-            "implementation": {"changes": [], "patch": "", "notes": ""}
+            "plan": PlannerOutput(summary="Test", plan=[], files_to_change=[]),
+            "implementation": ImplementerOutput(changes=[], patch="", notes="", tests_added_or_updated=[])
         }
 
         result = reviewer_agent.execute(context)
@@ -274,8 +283,8 @@ class TestReviewerAgent:
         ticket = get_authentication_ticket()
         context = {
             "ticket": ticket,
-            "plan": {"summary": "Test"},
-            "implementation": {"changes": [], "patch": "", "notes": ""}
+            "plan": PlannerOutput(summary="Test", plan=[], files_to_change=[]),
+            "implementation": ImplementerOutput(changes=[], patch="", notes="", tests_added_or_updated=[])
         }
 
         result = reviewer_agent.execute(context)
