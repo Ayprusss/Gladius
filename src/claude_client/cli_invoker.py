@@ -8,7 +8,6 @@ import time
 from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
-from pathlib import Path
 
 
 class ClaudeClient:
