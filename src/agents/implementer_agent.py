@@ -88,6 +88,19 @@ All file paths in your implementation should be relative to this project directo
             message += "\n## Existing Code Context\n"
             message += context['code_context']
 
+        # Add review feedback if available
+        if context.get('review_feedback'):
+            feedback = context['review_feedback']
+            message += f"\n## Review Feedback\n**Verdict:** {feedback.get('verdict', 'UNKNOWN')}\n\n**Issues:**\n"
+            for issue in feedback.get('issues', []):
+                message += f"- [{issue.get('severity', 'unknown').upper()}] {issue.get('file', 'unknown')}: {issue.get('description', '')}\n"
+                if 'suggestion' in issue:
+                    message += f"  Suggestion: {issue['suggestion']}\n"
+            if feedback.get('suggested_changes'):
+                message += "\n**Suggested Changes:**\n"
+                for change in feedback['suggested_changes']:
+                    message += f"- {change}\n"
+
         # Add validation feedback if this is a retry
         if context.get('validation_feedback'):
             message += "\n" + context['validation_feedback']

@@ -5,7 +5,7 @@ from typing import Dict, Any
 def get_authentication_ticket() -> Dict[str, Any]:
     """Feature ticket: Add user authentication"""
     return {
-        "id": "PROJ-123",
+        "key": "PROJ-123",
         "title": "Add user authentication to API",
         "type": "feature",
         "description": """
@@ -35,7 +35,7 @@ Acceptance Criteria:
 def get_memory_leak_ticket() -> Dict[str, Any]:
     """Bug ticket: Fix memory leak"""
     return {
-        "id": "PROJ-456",
+        "key": "PROJ-456",
         "title": "Fix memory leak in background job processor",
         "type": "bug",
         "description": """
@@ -69,7 +69,7 @@ Actual: Memory grows continuously until process crashes
 def get_refactoring_ticket() -> Dict[str, Any]:
     """Improvement ticket: Refactor database layer"""
     return {
-        "id": "PROJ-789",
+        "key": "PROJ-789",
         "title": "Refactor database layer to use repository pattern",
         "type": "improvement",
         "description": """
@@ -108,7 +108,7 @@ Non-Goals:
 def get_simple_feature_ticket() -> Dict[str, Any]:
     """Simple feature ticket for quick testing"""
     return {
-        "id": "PROJ-001",
+        "key": "PROJ-001",
         "title": "Add email validation to user registration",
         "type": "feature",
         "description": """
@@ -135,7 +135,7 @@ Acceptance Criteria:
 def get_documentation_ticket() -> Dict[str, Any]:
     """Documentation ticket"""
     return {
-        "id": "PROJ-999",
+        "key": "PROJ-999",
         "title": "Document API authentication flow",
         "type": "documentation",
         "description": """
