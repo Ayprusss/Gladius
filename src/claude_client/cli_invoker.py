@@ -5,6 +5,7 @@ import re
 import logging
 import threading
 import time
+import sys
 from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -81,21 +82,13 @@ class ClaudeClient:
             ])
 
         # Add user message safely around Windows limitations
-        import sys
         cmd_length = sum(len(str(x)) for x in cmd) + len(user_message or "")
-        user_msg_temp = None
-        stdin_val = None
+        input_data = None
 
         if sys.platform == "win32" and cmd_length > 8000:
-            import tempfile
-            import os
-            fd, user_msg_temp = tempfile.mkstemp(suffix=".txt", text=True)
-            with os.fdopen(fd, 'w', encoding='utf-8') as f:
-                f.write(user_message)
-            
             # Shorten the command line explicitly, relying on Claude to read stdin
             cmd.append("Please fulfill the task provided in the standard input.")
-            stdin_val = open(user_msg_temp, 'r', encoding='utf-8')
+            input_data = user_message
         else:
             cmd.append(user_message)
 
@@ -111,14 +104,11 @@ class ClaudeClient:
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=None,  # Allow stderr passthrough for auth prompts
-                stdin=stdin_val,   # Usually None, but file pointer if WinError 206 limits exceeded
+                input=input_data, # Use direct input to avoid WinError 206 limits
                 text=True,
                 timeout=self.timeout,
                 check=True
             )
-
-            stop_spinner.set()
-            spinner_thread.join() # Wait for spinner to finish clearing its line
 
             # Debug: Print to debug log
             logger.debug(f"About to parse stdout, length: {len(result.stdout)}")
@@ -134,35 +124,18 @@ class ClaudeClient:
             return parsed_result
 
         except subprocess.TimeoutExpired:
-            stop_spinner.set()
-            spinner_thread.join()
             raise TimeoutError(
                 f"Claude CLI execution exceeded timeout of {self.timeout}s"
             )
         except subprocess.CalledProcessError as e:
-            stop_spinner.set()
-            spinner_thread.join()
             raise RuntimeError(
                 f"Claude CLI execution failed with return code {e.returncode}"
             )
-        except Exception as e:
-            # Ensure spinner is stopped even for unexpected errors
-            stop_spinner.set()
-            spinner_thread.join()
-            raise # Re-raise the exception
         finally:
-            if stdin_val:
-                try:
-                    stdin_val.close()
-                except Exception:
-                    pass
-            if user_msg_temp:
-                import os
-                if os.path.exists(user_msg_temp):
-                    try:
-                        os.remove(user_msg_temp)
-                    except Exception:
-                        pass
+            # Ensure spinner is stopped and joined even for unexpected errors
+            stop_spinner.set()
+            if spinner_thread.is_alive():
+                spinner_thread.join() # Wait for spinner to finish clearing its line
 
     def _parse_json_output(self, output: str) -> Dict[str, Any]:
         """
