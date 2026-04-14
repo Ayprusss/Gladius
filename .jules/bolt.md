@@ -1,0 +1,3 @@
+## 2024-03-24 - O(N) Batch Processing Bottleneck due to time.sleep()
+**Learning:** Found a severe performance bottleneck in `DirectRequestAdapter.create_tickets_batch` where `time.sleep(1.1)` was used inside a loop to ensure uniqueness of timestamp-based IDs (`%Y%m%d%H%M%S` has 1-second granularity). This made batch creation scale at O(n) seconds, making it painfully slow for large batches.
+**Action:** When generating unique IDs in a batch where timestamps might collide, never block execution with `time.sleep()`. Instead, append a loop index or unique suffix to the ID generator to guarantee uniqueness instantly in O(1) time.
