@@ -21,7 +21,8 @@ class DirectRequestAdapter:
         self,
         request: str,
         ticket_type: Optional[str] = None,
-        priority: str = "medium"
+        priority: str = "medium",
+        suffix: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Create synthetic ticket from natural request
@@ -54,8 +55,13 @@ class DirectRequestAdapter:
         request = request.strip()
 
         # Generate unique ID with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        # ⚡ Bolt Optimization: Use microsecond precision (%f) instead of second precision.
+        # This guarantees unique ticket IDs without relying on synchronous delays (like time.sleep),
+        # allowing for instant, concurrent batch creation. Expected impact: batch generation time goes from O(n * 1s) to ~instant.
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
         ticket_id = f"{self.ticket_prefix}-{timestamp}"
+        if suffix is not None:
+            ticket_id = f"{ticket_id}-{suffix}"
 
         # Auto-detect type if not specified
         if ticket_type is None:
@@ -142,17 +148,13 @@ class DirectRequestAdapter:
             >>> len(tickets)
             2
         """
-        import time
         tickets = []
         for i, request in enumerate(requests):
-            # Add delay to ensure unique timestamps (1 second granularity)
-            if i > 0:
-                time.sleep(1.1)  # Slightly more than 1 second to ensure uniqueness
-
             ticket = self.create_synthetic_ticket(
                 request=request,
                 ticket_type=ticket_type,
-                priority=priority
+                priority=priority,
+                suffix=i
             )
             tickets.append(ticket)
 

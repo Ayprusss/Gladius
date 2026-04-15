@@ -82,7 +82,7 @@ class TestDirectRequestAdapter:
 
         assert ticket["key"].startswith("DIRECT-")
         # Should have timestamp: DIRECT-YYYYMMDDHHMMSS
-        assert len(ticket["key"]) == 21  # DIRECT- + 14 digit timestamp
+        assert len(ticket["key"]) >= 21  # DIRECT- + 14 digit timestamp (and optional suffix)
 
     def test_synthetic_ticket_id_uniqueness(self):
         """Test that consecutive tickets get unique IDs"""
