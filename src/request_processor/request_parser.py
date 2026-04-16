@@ -16,6 +16,7 @@ class RequestParser:
     # Ticket ID pattern: PROJ-123, ABC-45, etc.
     # Matches: uppercase letters, dash, digits
     TICKET_PATTERN = r'^[A-Z]+-\d+$'
+    _TICKET_REGEX = re.compile(TICKET_PATTERN)
 
     @staticmethod
     def parse(input_string: str) -> Tuple[RequestType, str]:
@@ -49,7 +50,7 @@ class RequestParser:
             raise ValueError("Request cannot be empty")
 
         # Check if it matches ticket ID pattern
-        if re.match(RequestParser.TICKET_PATTERN, cleaned):
+        if RequestParser._TICKET_REGEX.match(cleaned):
             return (RequestType.TICKET, cleaned)
         else:
             return (RequestType.NATURAL, cleaned)
@@ -73,4 +74,4 @@ class RequestParser:
             False
         """
         cleaned = input_string.strip()
-        return bool(re.match(RequestParser.TICKET_PATTERN, cleaned))
+        return bool(RequestParser._TICKET_REGEX.match(cleaned))

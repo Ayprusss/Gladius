@@ -10,6 +10,7 @@ from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
+_MD_JSON_REGEX = re.compile(r'```(?:json)?\s*(\{.*?\})\s*```', re.DOTALL)
 
 class ClaudeClient:
     """Wrapper for invoking Claude CLI with JSON output"""
@@ -152,7 +153,7 @@ class ClaudeClient:
             except json.JSONDecodeError:
                 pass
             
-            md_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', s, re.DOTALL)
+            md_match = _MD_JSON_REGEX.search(s)
             if md_match:
                 try:
                     obj = json.loads(md_match.group(1))
