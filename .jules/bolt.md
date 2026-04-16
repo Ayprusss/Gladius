@@ -8,3 +8,6 @@ I completely replaced the regex string-matching approach with iterative parsing 
 ## 2026-04-15 - Remove time.sleep in ticket batch creation
 **Learning:** Using `time.sleep()` to guarantee unique IDs is a major anti-pattern that slows down batch operations to O(N) time (1.1s per item in this case). Relying solely on second-level precision timestamps for uniqueness creates collisions when processes run quickly.
 **Action:** Use microsecond precision (`%f`) combined with an iteration suffix to generate unique IDs synchronously without any blocking delays.
+## 2024-04-16 - Pre-compile static regexes
+**Learning:** I found that we were repeatedly compiling static regex patterns inside frequently called functions (like extracting JSON and parsing tickets). Recompiling regex patterns on every method call is an unnecessary performance hit.
+**Action:** Pre-compile regex strings at the module or class level (`re.compile()`) to avoid redundant compilation overhead and improve overall application execution speed.
