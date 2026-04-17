@@ -78,6 +78,8 @@ class RequestTypeDetector:
             "improvement": improvement_score
         }
 
+        # ⚡ Bolt Optimization: Derive detected_type directly from the computed scores
+        # instead of calling detect_type(). This avoids redundant recalculations and saves string parsing operations.
         # Find type with highest score
         max_type = max(scores, key=scores.get)
 
@@ -119,7 +121,20 @@ class RequestTypeDetector:
             if kw in request_lower
         )
 
-        detected_type = RequestTypeDetector.detect_type(request)
+        scores = {
+            "bug": bug_score,
+            "feature": feature_score,
+            "improvement": improvement_score
+        }
+
+        # Find type with highest score
+        max_type = max(scores, key=scores.get)
+
+        # Default to "feature" if no clear match (all scores are 0)
+        if scores[max_type] == 0:
+            detected_type = "feature"
+        else:
+            detected_type = max_type
 
         return {
             "bug": bug_score,
