@@ -11,3 +11,7 @@ I completely replaced the regex string-matching approach with iterative parsing 
 ## 2024-04-16 - Pre-compile static regexes
 **Learning:** I found that we were repeatedly compiling static regex patterns inside frequently called functions (like extracting JSON and parsing tickets). Recompiling regex patterns on every method call is an unnecessary performance hit.
 **Action:** Pre-compile regex strings at the module or class level (`re.compile()`) to avoid redundant compilation overhead and improve overall application execution speed.
+## 2024-04-17 - Avoid redundant method calls in get_confidence
+
+**Learning:** I found that `RequestTypeDetector.get_confidence` was redundantly calling `detect_type`, effectively performing O(N) operations over the string (lower-casing and keyword counting) twice for every call.
+**Action:** Extract or inline the shared logic so `get_confidence` directly computes the result from scores it has already built, saving duplicate execution.
