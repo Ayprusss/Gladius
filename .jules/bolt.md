@@ -15,3 +15,7 @@ I completely replaced the regex string-matching approach with iterative parsing 
 
 **Learning:** I found that `RequestTypeDetector.get_confidence` was redundantly calling `detect_type`, effectively performing O(N) operations over the string (lower-casing and keyword counting) twice for every call.
 **Action:** Extract or inline the shared logic so `get_confidence` directly computes the result from scores it has already built, saving duplicate execution.
+## 2024-04-18 - Avoid O(N^2) memory copying in iterative JSON parsing
+
+**Learning:** I found a performance bottleneck in `src/claude_client/cli_invoker.py`. The iterative JSON parser was creating string slices (`s[start:]`) on each iteration to parse blocks of text. Since creating a slice copies the string data into a new string object, executing this inside a while loop causes O(N^2) memory allocations, especially inefficient when parsing long responses like LLM outputs.
+**Action:** Next time I need to extract JSON blocks from a string iteratively, I will use `json.JSONDecoder().raw_decode(s, start)` and pass the start index directly to avoid string duplication. Note that when passing `start`, the returned `index` is absolute, so I update it using `start = index` instead of `start += index`.

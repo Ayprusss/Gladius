@@ -163,6 +163,9 @@ class ClaudeClient:
                     pass
 
             # Robust, non-backtracking JSON extraction using JSONDecoder
+            # ⚡ Bolt Optimization: Avoid O(N^2) memory copying by passing the start index directly to raw_decode
+            # instead of creating new string slices (s[start:]).
+            # This is particularly impactful for very large LLM outputs.
             decoder = json.JSONDecoder()
             start = 0
             while True:
@@ -170,10 +173,10 @@ class ClaudeClient:
                 if start == -1:
                     break
                 try:
-                    obj, index = decoder.raw_decode(s[start:])
+                    obj, index = decoder.raw_decode(s, start)
                     if isinstance(obj, dict) and any(k in obj for k in target_keys):
                         return obj
-                    start += index
+                    start = index
                 except json.JSONDecodeError:
                     start += 1
 
@@ -212,7 +215,7 @@ class ClaudeClient:
                 if start == -1:
                     break
                 try:
-                    parsed, index = decoder.raw_decode(output[start:])
+                    parsed, index = decoder.raw_decode(output, start)
                     break
                 except json.JSONDecodeError:
                     start += 1
