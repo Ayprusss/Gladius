@@ -15,3 +15,6 @@ I completely replaced the regex string-matching approach with iterative parsing 
 
 **Learning:** I found that `RequestTypeDetector.get_confidence` was redundantly calling `detect_type`, effectively performing O(N) operations over the string (lower-casing and keyword counting) twice for every call.
 **Action:** Extract or inline the shared logic so `get_confidence` directly computes the result from scores it has already built, saving duplicate execution.
+## 2024-04-18 - Avoid string slicing in JSON raw_decode
+**Learning:** While iterating through raw text to extract JSON chunks with `json.JSONDecoder().raw_decode()`, using string slicing (`s[start:]`) forces Python to copy memory redundantly, creating an O(N²) memory performance bottleneck when working with large outputs.
+**Action:** Use `decoder.raw_decode(s, start)` instead of `s[start:]` to search through the string without allocating new copies. Additionally, be aware that when the `idx` parameter is used, `raw_decode` returns the absolute ending index in the original string (so use `start = index`), whereas without `idx`, it returns the relative index (which requires `start += index`).
