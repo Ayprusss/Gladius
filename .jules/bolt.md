@@ -15,3 +15,10 @@ I completely replaced the regex string-matching approach with iterative parsing 
 
 **Learning:** I found that `RequestTypeDetector.get_confidence` was redundantly calling `detect_type`, effectively performing O(N) operations over the string (lower-casing and keyword counting) twice for every call.
 **Action:** Extract or inline the shared logic so `get_confidence` directly computes the result from scores it has already built, saving duplicate execution.
+## 2024-05-18 - JSONDecoder memory copying anti-pattern
+**Learning:** Using `json.JSONDecoder().raw_decode(s[start:])` in a loop to extract JSON from unstructured text is an anti-pattern. Slicing the string `s[start:]` creates a new string object in memory for each iteration, resulting in O(N^2) time complexity.
+**Action:** Always use the `idx` parameter of `raw_decode`: `raw_decode(s, start)`. This decodes directly from the original string buffer. Remember that when using the `idx` parameter, the returned `index` is absolute, so the update step should be `start = index`, not `start += index`.
+
+## 2024-05-18 - Generator comprehensions vs explicit loops readability
+**Learning:** Replacing concise generator comprehensions like `sum(1 for kw in list if kw in text)` with explicit, verbose `for` loops does yield minor execution speedups but heavily sacrifices readability. The prompt explicitly prohibits micro-optimizations that harm code readability.
+**Action:** Avoid unrolling simple comprehensions or generator expressions into explicit loops merely for micro-optimization if it makes the code significantly more verbose and less pythonic.
