@@ -15,3 +15,7 @@ I completely replaced the regex string-matching approach with iterative parsing 
 
 **Learning:** I found that `RequestTypeDetector.get_confidence` was redundantly calling `detect_type`, effectively performing O(N) operations over the string (lower-casing and keyword counting) twice for every call.
 **Action:** Extract or inline the shared logic so `get_confidence` directly computes the result from scores it has already built, saving duplicate execution.
+## 2024-04-18 - Avoid O(N^2) memory copying in JSON decoding
+
+**Learning:** I found that extracting JSON blocks iteratively via `decoder.raw_decode(s[start:])` creates new string copies for every slice, leading to catastrophic O(N^2) memory consumption and slowdowns on large LLM outputs.
+**Action:** Always use the optional `idx` parameter with `decoder.raw_decode(s, start)` when iterating to advance the index safely without copying the entire remaining string. Note that `raw_decode` returns an absolute index relative to the original string.
