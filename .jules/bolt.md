@@ -15,3 +15,6 @@ I completely replaced the regex string-matching approach with iterative parsing 
 
 **Learning:** I found that `RequestTypeDetector.get_confidence` was redundantly calling `detect_type`, effectively performing O(N) operations over the string (lower-casing and keyword counting) twice for every call.
 **Action:** Extract or inline the shared logic so `get_confidence` directly computes the result from scores it has already built, saving duplicate execution.
+## 2024-04-28 - Remove time.sleep in ArtifactManager tests
+**Learning:** I found that `ArtifactManager` was using second-level precision (`%Y%m%d_%H%M%S`) for its run directory timestamps. In the integration tests (`tests/test_integration.py`), `time.sleep(1.1)` was used to prevent directory name collisions when creating multiple runs quickly. This is a common test anti-pattern that slows down the test suite.
+**Action:** By increasing the timestamp precision to microseconds (`%f`) in `ArtifactManager.create_run`, we can safely remove all `time.sleep` calls, allowing runs to be created synchronously and instantly. This saves ~2.2 seconds per execution of the `test_list_runs` method.
