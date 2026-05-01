@@ -170,10 +170,12 @@ class ClaudeClient:
                 if start == -1:
                     break
                 try:
-                    obj, index = decoder.raw_decode(s[start:])
+                    # ⚡ Bolt Optimization: Use `idx=start` to avoid O(N^2) memory copying
+                    # from string slicing `s[start:]` on large Claude outputs.
+                    obj, index = decoder.raw_decode(s, idx=start)
                     if isinstance(obj, dict) and any(k in obj for k in target_keys):
                         return obj
-                    start += index
+                    start = index
                 except json.JSONDecodeError:
                     start += 1
 
@@ -212,7 +214,9 @@ class ClaudeClient:
                 if start == -1:
                     break
                 try:
-                    parsed, index = decoder.raw_decode(output[start:])
+                    # ⚡ Bolt Optimization: Use `idx=start` to avoid O(N^2) memory copying
+                    # from string slicing `output[start:]` on large Claude outputs.
+                    parsed, index = decoder.raw_decode(output, idx=start)
                     break
                 except json.JSONDecodeError:
                     start += 1
