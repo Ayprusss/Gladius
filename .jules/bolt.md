@@ -15,3 +15,10 @@ I completely replaced the regex string-matching approach with iterative parsing 
 
 **Learning:** I found that `RequestTypeDetector.get_confidence` was redundantly calling `detect_type`, effectively performing O(N) operations over the string (lower-casing and keyword counting) twice for every call.
 **Action:** Extract or inline the shared logic so `get_confidence` directly computes the result from scores it has already built, saving duplicate execution.
+## 2024-04-18 - Remove time.sleep test overhead in ArtifactManager
+
+**Learning:**
+I discovered that `ArtifactManager.list_runs` and related tests were relying on `time.sleep()` to guarantee unique timestamp-based directory names because the timestamps only had second-level precision. This is an anti-pattern that slows down testing and batch creation operations unnecessarily.
+
+**Action:**
+I updated the timestamp format in `ArtifactManager.create_run` to use microsecond precision (`%Y%m%d_%H%M%S_%f`). Next time I generate timestamp-based unique identifiers, I will ensure they have sufficient precision (like microseconds) to naturally prevent collisions during rapid consecutive executions, avoiding the need for artificial blocking delays.

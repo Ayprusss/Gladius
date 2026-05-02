@@ -343,13 +343,10 @@ class TestArtifactManager:
     def test_list_runs(self, temp_runs_dir):
         """Test listing runs"""
         manager = ArtifactManager(base_dir=str(temp_runs_dir))
-        import time
 
         # Create multiple runs
         manager.create_run("PROJ-123")
-        time.sleep(1.1)
         manager.create_run("PROJ-456")
-        time.sleep(1.1)
         manager.create_run("PROJ-123")  # Another run for same ticket
 
         # List all runs

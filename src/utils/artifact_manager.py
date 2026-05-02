@@ -31,7 +31,10 @@ class ArtifactManager:
             Path to the run directory
         """
         # Create timestamp-based run directory
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # ⚡ Bolt Optimization: Use microsecond precision (%f) instead of second precision in run directory timestamps.
+        # This guarantees unique run directories without relying on synchronous delays (like time.sleep)
+        # during batch operations or rapid consecutive test runs, improving performance.
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         run_name = f"{ticket_id}_{timestamp}"
         run_dir = self.base_dir / run_name
 
