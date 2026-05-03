@@ -15,3 +15,6 @@ I completely replaced the regex string-matching approach with iterative parsing 
 
 **Learning:** I found that `RequestTypeDetector.get_confidence` was redundantly calling `detect_type`, effectively performing O(N) operations over the string (lower-casing and keyword counting) twice for every call.
 **Action:** Extract or inline the shared logic so `get_confidence` directly computes the result from scores it has already built, saving duplicate execution.
+## 2024-05-03 - Fast-path early return for JSON parsing
+**Learning:** Checking for the presence of a '{' using an O(N) string check before attempting to parse large strings as JSON provides a massive performance speedup by preventing unnecessary json.loads exceptions and regex operations on plain text.
+**Action:** Always add simple substring inclusion fast-paths before engaging heavy parsers like json or regex on unstructured LLM output.
