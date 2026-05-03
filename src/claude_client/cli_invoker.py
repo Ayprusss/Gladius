@@ -146,6 +146,11 @@ class ClaudeClient:
         target_keys = {'plan', 'changes', 'verdict', 'issues', 'patch', 'files_to_modify', 'files_to_change'}
 
         def extract_from_string(s: str) -> Optional[Dict[str, Any]]:
+            # ⚡ Bolt Optimization: Fast-path early return
+            # O(N) check skips expensive regex and JSON parsing attempts
+            # on large plain-text blocks or code strings lacking braces.
+            if "{" not in s:
+                return None
             try:
                 obj = json.loads(s)
                 if isinstance(obj, dict) and any(k in obj for k in target_keys):
