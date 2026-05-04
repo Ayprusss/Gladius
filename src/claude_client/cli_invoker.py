@@ -146,6 +146,12 @@ class ClaudeClient:
         target_keys = {'plan', 'changes', 'verdict', 'issues', 'patch', 'files_to_modify', 'files_to_change'}
 
         def extract_from_string(s: str) -> Optional[Dict[str, Any]]:
+            # Fast-path: if there's no brace, it definitely doesn't contain a JSON object.
+            # This avoids expensive exception handling (json.loads) and regex matching
+            # on plain-text LLM output segments.
+            if '{' not in s:
+                return None
+
             try:
                 obj = json.loads(s)
                 if isinstance(obj, dict) and any(k in obj for k in target_keys):
