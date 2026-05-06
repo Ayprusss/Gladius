@@ -15,3 +15,7 @@ I completely replaced the regex string-matching approach with iterative parsing 
 
 **Learning:** I found that `RequestTypeDetector.get_confidence` was redundantly calling `detect_type`, effectively performing O(N) operations over the string (lower-casing and keyword counting) twice for every call.
 **Action:** Extract or inline the shared logic so `get_confidence` directly computes the result from scores it has already built, saving duplicate execution.
+## 2024-04-18 - Optimize JSON extraction to prevent O(N^2) memory copying
+
+**Learning:** I found that `json.JSONDecoder().raw_decode` was being called with sliced strings (e.g. `s[start:]`), which creates a memory copy of the potentially large string repeatedly in a while loop. This creates an $O(N^2)$ memory and performance overhead on massive texts.
+**Action:** `raw_decode` accepts a starting index as the second positional argument (e.g., `decoder.raw_decode(s, start)`). Use this parameter instead of string slicing to achieve in-place parsing. Be mindful that when doing this, `raw_decode` returns an absolute index relative to the beginning of the original string `s`, not a relative offset. Therefore, update pointers using direct assignment (`start = index`) rather than addition (`start += index`).
