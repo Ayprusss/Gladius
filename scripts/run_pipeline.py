@@ -14,7 +14,7 @@ if sys.platform == "win32":
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.orchestrator import PipelineOrchestrator
+from src.orchestrator import PipelineOrchestrator, PipelineConfig
 from src.mcp.mock_mcp import MockMCPClient
 from src.mcp.unified_mcp_client import UnifiedMCPClient
 from src.request_processor.request_adapter import DirectRequestAdapter
@@ -188,12 +188,15 @@ Examples:
         return 1
 
     # Initialize orchestrator
-    orchestrator = PipelineOrchestrator(
-        mcp_client=mcp_client,
-        artifact_manager=artifact_manager,
+    config = PipelineConfig(
         claude_path=args.claude_path,
         timeout=args.timeout,
         max_review_iterations=args.max_iterations
+    )
+    orchestrator = PipelineOrchestrator(
+        mcp_client=mcp_client,
+        artifact_manager=artifact_manager,
+        config=config
     )
 
     # Run pipeline

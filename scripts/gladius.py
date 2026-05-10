@@ -24,7 +24,7 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.key_binding import KeyBindings
 
-from src.orchestrator import PipelineOrchestrator
+from src.orchestrator import PipelineOrchestrator, PipelineConfig
 from src.mcp.mock_mcp import MockMCPClient
 from src.mcp.unified_mcp_client import UnifiedMCPClient
 from src.request_processor.request_adapter import DirectRequestAdapter
@@ -321,12 +321,17 @@ def main() -> None:
         request_adapter=DirectRequestAdapter()
     )
     artifact_manager = ArtifactManager(base_dir=runs_dir)
-    orchestrator     = PipelineOrchestrator(
-        mcp_client=mcp_client,
-        artifact_manager=artifact_manager,
+
+    config = PipelineConfig(
         claude_path=claude_cfg.get("cli_path", "claude"),
         timeout=timeout,
         max_review_iterations=max_iter,
+    )
+
+    orchestrator = PipelineOrchestrator(
+        mcp_client=mcp_client,
+        artifact_manager=artifact_manager,
+        config=config
     )
 
     if args.request:
