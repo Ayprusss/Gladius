@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
 import shutil
 
-from src.orchestrator import PipelineOrchestrator
+from src.orchestrator import PipelineOrchestrator, PipelineConfig
 from src.mcp.mock_mcp import MockMCPClient
 from src.utils.artifact_manager import ArtifactManager
 from tests.fixtures.tickets import get_authentication_ticket
@@ -111,7 +111,7 @@ class TestPipelineIntegration:
         orchestrator = PipelineOrchestrator(
             mcp_client=mcp_client,
             artifact_manager=artifact_manager,
-            max_review_iterations=2
+            config=PipelineConfig(max_review_iterations=2)
         )
         orchestrator.claude_client = mock_claude_client
 
@@ -206,7 +206,7 @@ class TestPipelineIntegration:
         orchestrator = PipelineOrchestrator(
             mcp_client=mcp_client,
             artifact_manager=artifact_manager,
-            max_review_iterations=2
+            config=PipelineConfig(max_review_iterations=2)
         )
         orchestrator.claude_client = mock_claude_client
 
@@ -282,7 +282,7 @@ class TestPipelineIntegration:
         orchestrator = PipelineOrchestrator(
             mcp_client=mcp_client,
             artifact_manager=artifact_manager,
-            max_review_iterations=2
+            config=PipelineConfig(max_review_iterations=2)
         )
         orchestrator.claude_client = mock_claude_client
 

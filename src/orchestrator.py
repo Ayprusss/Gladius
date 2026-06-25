@@ -2,6 +2,7 @@
 from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime
+from dataclasses import dataclass
 
 from .claude_client.cli_invoker import ClaudeClient
 from .agents.planner_agent import PlannerAgent
@@ -12,6 +13,14 @@ from .utils.artifact_manager import ArtifactManager
 from .utils.path_validator import PathValidator
 
 
+@dataclass
+class PipelineConfig:
+    """Configuration for the pipeline"""
+    claude_path: str = "claude"
+    timeout: int = 300
+    max_review_iterations: int = 2
+
+
 class PipelineOrchestrator:
     """Orchestrates the multi-agent pipeline"""
 
@@ -19,9 +28,7 @@ class PipelineOrchestrator:
         self,
         mcp_client: MCPClient,
         artifact_manager: Optional[ArtifactManager] = None,
-        claude_path: str = "claude",
-        timeout: int = 300,
-        max_review_iterations: int = 2
+        config: Optional[PipelineConfig] = None
     ):
         """
         Initialize pipeline orchestrator
@@ -29,16 +36,20 @@ class PipelineOrchestrator:
         Args:
             mcp_client: MCP client for ticket retrieval
             artifact_manager: Artifact manager for output persistence
-            claude_path: Path to Claude CLI executable
-            timeout: Timeout for Claude CLI invocations
-            max_review_iterations: Maximum review/revision cycles
+            config: Pipeline configuration options
         """
         self.mcp_client = mcp_client
         self.artifact_manager = artifact_manager or ArtifactManager()
-        self.max_review_iterations = max_review_iterations
+
+        # Use default config if none provided
+        self.config = config or PipelineConfig()
+        self.max_review_iterations = self.config.max_review_iterations
 
         # Initialize Claude client
-        self.claude_client = ClaudeClient(claude_path=claude_path, timeout=timeout)
+        self.claude_client = ClaudeClient(
+            claude_path=self.config.claude_path,
+            timeout=self.config.timeout
+        )
 
         # Initialize agents
         self.planner = PlannerAgent(self.claude_client)
