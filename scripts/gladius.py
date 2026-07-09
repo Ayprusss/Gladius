@@ -11,6 +11,7 @@ Usage:
 """
 import sys
 import os
+import subprocess
 import shutil
 import re
 from pathlib import Path
@@ -253,7 +254,7 @@ def interactive_loop(
             elif cmd == "/list":
                 print_run_list(artifact_manager)
             elif cmd == "/clear":
-                os.system("cls" if sys.platform == "win32" else "clear")
+                subprocess.run("cls" if sys.platform == "win32" else "clear", shell=True)
                 print_banner(model, project_path, artifact_manager)
             elif cmd == "/model":
                 valid = ("sonnet", "opus", "haiku")
